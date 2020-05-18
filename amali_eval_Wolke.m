@@ -4,6 +4,7 @@ function ok = amali_eval_Wolke(DatStr, aerofak, Speichernamepraefix, BSR532soll,
 %test von git
 %test vom BirteZweig change
 %change by Christoph
+%2nd change by Birte
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % AMALi Auswertung
