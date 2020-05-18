@@ -3,6 +3,8 @@ critterpath %warum fuehrt er hier nochmal den critterpath aus, wenn wir vorher d
 function ok = amali_eval_Wolke(DatStr, aerofak, Speichernamepraefix, BSR532soll, BSRAtFit532start, Von, Bis)
 %test von git
 %test vom BirteZweig change
+%change by Christoph
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % AMALi Auswertung
 %
