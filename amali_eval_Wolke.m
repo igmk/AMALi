@@ -795,7 +795,7 @@ Betaaer355err(Sel355P,j)=abs(dBdR355.*BSRAtFiterr)+abs(dBdLR355.*LR355arrerr(Sel
 Btemp355(Sel355P)=Beta./BeRa355(Sel355P,1); Btemp355err(Sel355P)=Betaaer355err(Sel355P,j)./BeRa355(Sel355P,1); 
 tmp=mymean(Btemp355(Sel355P(clearint)));
 
-[Beta2, dBdR3552, dBdLR3552, dBdP3552, CLidar2] = klettinv_ableit4( BSRAtFit355arr(j)+1, FitRangearr(:,j), H(Sel355P), P355Klett(Sel355P,j), P355Kletterr(Sel355P,j), ...
+[Beta2, dBdR3552, dBdLR3552, dBdP3552, CLidar2] = klettinv_ableit5( BSRAtFit355arr(j)+1, FitRangearr(:,j), H(Sel355P), P355Klett(Sel355P,j), P355Kletterr(Sel355P,j), ...
     LR355arr(Sel355P,j), AlRay355(Sel355P,1), BeRa355(Sel355P,1));
 BetaAer355_2(Sel355P)=Beta2-BeRa355(Sel355P,1);
 %BetaAer355_2err(Sel355P,j)=abs(dBdR3552.*BSRAtFiterr)+abs(dBdLR3552.*LR355arrerr(Sel355P,j))+abs(dBdP3552.*P355Kletterr(Sel355P,j));
