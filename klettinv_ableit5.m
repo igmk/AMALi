@@ -1,6 +1,8 @@
 function [Beta, dBdR, dBdLR, dBdP, CLidar] = klettinv_ableit5( BSRAtFit, FitRange, H, P, PAE, LR, ...
 AlRay, BeRa, rueckwaerts)
 
+% Hallo Birte!
+  
 % Aufruf:
 % [Beta, dBdR, dBdLR, dBdP, CLidar] = klettinv_ableit4( BSRAtFit355arr(i), FitRangeC, H(Sel), P(Sel,i), Perr(Sel,i), ...
 % LR355arr(Sel,i), AlRay355(Sel,i), BeRa355(Sel,i));
