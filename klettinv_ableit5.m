@@ -2,6 +2,7 @@ function [Beta, dBdR, dBdLR, dBdP, CLidar] = klettinv_ableit5( BSRAtFit, FitRang
 AlRay, BeRa, rueckwaerts)
 
 % Hallo Birte!
+%hallo Christoph
   
 % Aufruf:
 % [Beta, dBdR, dBdLR, dBdP, CLidar] = klettinv_ableit4( BSRAtFit355arr(i), FitRangeC, H(Sel), P(Sel,i), Perr(Sel,i), ...
