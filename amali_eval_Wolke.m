@@ -1,10 +1,4 @@
-critterpath %warum fuehrt er hier nochmal den critterpath aus, wenn wir vorher dem amalipath ausgefuert haben?
-
 function ok = amali_eval_Wolke(DatStr, aerofak, Speichernamepraefix, BSR532soll, BSRAtFit532start, Von, Bis)
-%test von git
-%test vom BirteZweig change
-%change by Christoph
-%2nd change by Birte
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % AMALi Auswertung
@@ -35,12 +29,12 @@ if strcmp(DatStr(1:2), '17'),
     campaign = 'ACLOUD';
     Angstroem=1.4;
     speicherdir = '/atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2017/'; 
-    amalidatendir='/lidar4/lidar/amali/data/mat/2017/'
+    amalidatendir='/lidar4/lidar/amali2011/data/mat/2017/'
 elseif strcmp(DatStr(1:2), '19'),
     campaign = 'AFLUX';
     Angstroem=1.2;
     speicherdir = '/atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2019/'; 
-    amalidatendir='/atm_meas/polar_5_6/amali/data/mat/2019/'
+    amalidatendir='/lidar4/lidar/amali2011/data/mat/2019/'
 else
     disp('Von dieser Kampagne hab ikk noch nie watt jehoert!?')
     return
@@ -55,9 +49,9 @@ end
 
 % Definitionen
 
-Wvl532 =5.3207e-7; %wavelength
+Wvl532 =5.3207e-7;
 Wvl355 =3.5471e-7;
-LR532aerosol=35;%nicht unbedingt die richtigen Werte hier !
+LR532aerosol=35;
 LR532wolke=20;
 LR532Saerosol=35;
 LR532Swolke=20;
@@ -65,8 +59,8 @@ LR355aerosol=30;
 LR355wolke=20;
 LRobergr = 120;        % LRuntergrenze = 5, unver?nderlich
 LRerr = 2; % angenommener Fehler im LR  war 10
-Wolkenschwelle532=5; %was macht das? wo kommen die 5 her? hier ggf. fehlerquelle
-Wolkenschwelle532S=10;   % verrauschter, wollen durch  %???????????????????????????
+Wolkenschwelle532=5;
+Wolkenschwelle532S=10;   % verrauschter, wollen durch 
 Wolkenschwelle355=3;
 tzlim = 5; hzlim=5;  % limit f?r Hoch- Tiefzahl bei Iter LR
 % BSRAtFit532start = 1.4;      % besser als Inputparameter
@@ -81,7 +75,7 @@ BSR355mintrust  = 1 + (BSR532mintrust -1) ./ 1.5.^WvlExpo;
 % bekannt ist
 % BSR355soll = 1 + (BSR532soll-1) ./ 1.5.^WvlExpo;
 % nur f?er den Notfall (NaN im KARL oder keine guteaeroposi):
-BSR532sollnotfall = 1.3; % was ist das alles? das ist neu? 
+BSR532sollnotfall = 1.3;
 BSR532Ssollnotfall = 1.3;
 BSR355sollnotfall = 1 + (BSR532sollnotfall-1) ./ 1.5.^WvlExpo;
 
@@ -263,8 +257,7 @@ NBeRa355 = exp(tmp);
 % height=height_rounded_vector(2:end);
 % range=
 
-datum=[DatStr(1:2), DatStr(4:6)];
-% if Oktober,november or december make correct date format
+datum=[DatStr '/'];
 suchfile=[amalidatendir datum '*.mat'];
 files=findfile(suchfile)
 NofFiles = length(files(:,1));
@@ -273,7 +266,7 @@ if NofFiles >1,
 end
 if isempty(files)
     ok=-1;
-    disp(['woanders ist auch Sch.... ... keine Daten fuer: ' DatStr])
+    disp(['woanders ist auch Sch.... ... keine Daten fuer: ' datum(1:6)])
     return
 else
 % jetzt geht es aber mal so richtig los  
@@ -384,7 +377,7 @@ VolDep532 = P532Sfuerdepol ./ P532fuerdepol;
 % diese in counts wie die pc-Profile
 wo532scompare=find(P532SCKlett < 10 & P532SCKlett > 4);
 fktoranapc532s = mymean(P532SKlett(wo532scompare))./mymean(P532SCKlett(wo532scompare));
-P532Sklettgesamt = P532SKlett ./ fktoranapc532s;
+%P532Sklettgesamt = P532Sklett ./ fktoranapc532s;
 
 
 wo=find(P532Klett < Schwelle); P532Klett(wo)=Schwelle;
@@ -902,7 +895,7 @@ end
       controllBSRWert(iter) =  BSR532haben;
     end % while f?r die Randbedingung
     
-    %sporadisch kommen zu niedirige Rd-bedingungen vor, weil vermutlich die
+    %sporadisch kommen zu niedrige Rd-bedingungen vor, weil vermutlich die
     %LR total falsch sind. Dies wird hier abgefangen: (gefunden bei 532S)
     if BSRAtFit532arr(j) < BSR532mintrust, 
         BSRAtFit532arr(j) = BSR532mintrust; 
