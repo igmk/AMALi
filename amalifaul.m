@@ -12,7 +12,8 @@ function amalifaul(VonDat, BisDat)
 
 
 
-amalipath % 
+
+addpath('/atm_meas/polar_5_6/amali/processing/nadir/cloud/Amali_subroutines');  
 
 
 campaign = 'AFLUX';          %'ACLOUD'
