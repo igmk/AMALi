@@ -131,6 +131,8 @@ if strcmp(campaign, 'ACLOUD')
     ptu = load(ptuinfile);
     ozoinfile='/atm_meas/awipev/lidar/karl/matlab/ozo/1706.mat';
     ozo = load(ozoinfile);
+    %koennen wir hier bitte nur die Variablen laden, die wir auch
+    %tatsaechlich brauchen? 
     load /atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2017/aerosol_background_karl/KARLaverageBSR532ausACLOUD
     KarlH = H; % H wird sp?ter der AMALi Range-vektor
     BSR532Karlmean= BSR532mean; BSR532Karlmedian = BSR532median;
@@ -283,15 +285,6 @@ NBeRa355 = exp(tmp);
 % BeRa355=Density.*raybckwq (wavelenght_355,'p','p', ptu.PTUTemperature, Density);
 % % Korrektur durch molek. Absorption, die praktisch nur durch O3
 % % vor allem wichit in Strato - wenn es kein Ozon aus Dropsonde gibt
-% % vernachl?ssigen wir diesen Quatsch
-% %dropdimen=size(AlRay355);
-% %for j=1:dropdimen(2)
-% %AbsorbtionOzone.ch532=meanO3profile.*o3abswq(wavelenght_532,ptu.PTUTemperature(:,j));
-% %AbsorbtionOzone.ch355=meanO3profile.*o3abswq(wavelenght_355,ptu.PTUTemperature(:,j));
-% %AlRay532(:,j)=AlRay532(:,j)+AbsorbtionOzone.ch532;
-% %AlRay355(:,j)=AlRay355(:,j)+AbsorbtionOzone.ch355;
-% end
-%
 
 
 
