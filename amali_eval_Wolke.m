@@ -34,7 +34,7 @@ elseif strcmp(DatStr(1:2), '19'),
     campaign = 'AFLUX';
     Angstroem=1.2;
     speicherdir = '/atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2019/'; 
-    amalidatendir='/lidar4/lidar/amali2011/data/mat/2019/'
+    amalidatendir='/atm_meas/polar_5_6/amali/data/mat/2019/';
 else
     disp('Von dieser Kampagne hab ikk noch nie watt jehoert!?')
     return
@@ -122,6 +122,7 @@ flughoehe=AFLUXGPS(:,2);
 wo=find(flughoehe > 10000);
 flughoehe(wo)=NaN;
 end
+
 meanO3profile=(mymean(OZOO3Density'))';
 Density = density(PTUPressure, PTUPressure./100, PTUTemperature,ones(size(PTUTemperature)).*2);
 %Extinktion nurr Streuanteil (99% ausmacht)
@@ -257,7 +258,9 @@ NBeRa355 = exp(tmp);
 % height=height_rounded_vector(2:end);
 % range=
 
-datum=[DatStr '/'];
+datum=[DatStr(1:2), DatStr(4:6)];% Fuer alte Datenstruktur: datum=[DatStr '/'];
+%aus unerfindlichen gruenden haben die neuen matlabfiles keine nullen vor dem Monat
+
 suchfile=[amalidatendir datum '*.mat'];
 files=findfile(suchfile)
 NofFiles = length(files(:,1));
@@ -266,7 +269,7 @@ if NofFiles >1,
 end
 if isempty(files)
     ok=-1;
-    disp(['.... ... keine Daten fuer: ' datum(1:6)])
+    disp(['.... ... keine Daten fuer: ' datum])
     return
 else
 % jetzt geht es aber mal so richtig los  
@@ -545,7 +548,7 @@ if teilzeitjob==1,
 else
     start = 1; ende = entries;
 end
-teiler=floor(ende./10);
+teiler=floor(ende./20);
 
 
 
