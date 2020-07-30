@@ -24,13 +24,14 @@ function ok = amali_eval_Wolke(DatStr, aerofak, Speichernamepraefix, BSR532soll,
 ok=-1;
 
 % 
+disp("richtige Version")
     
-if strcmp(DatStr(1:2), '17'),
+if strcmp(DatStr(1:2), '17')
     campaign = 'ACLOUD';
     Angstroem=1.4;
     speicherdir = '/atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2017/'; 
     amalidatendir='/lidar4/lidar/amali2011/data/mat/2017/'
-elseif strcmp(DatStr(1:2), '19'),
+elseif strcmp(DatStr(1:2), '19')
     campaign = 'AFLUX';
     Angstroem=1.2;
     speicherdir = '/atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2019/'; 
@@ -51,13 +52,14 @@ end
 
 Wvl532 =5.3207e-7;
 Wvl355 =3.5471e-7;
-LR532aerosol=35;
-LR532wolke=20;
-LR532Saerosol=35;
-LR532Swolke=20;
-LR355aerosol=30;
-LR355wolke=20;
-LRobergr = 120;        % LRuntergrenze = 5, unver?nderlich
+LR532aerosol=23;
+LR532wolke=15;
+LR532Saerosol=23;
+LR532Swolke=15;
+LR355aerosol=23;
+LR355wolke=15;
+LRobergr = 120;        % 
+LRuntergr = 3:% unver?nderlich
 LRerr = 2; % angenommener Fehler im LR  war 10
 Wolkenschwelle532=5;
 Wolkenschwelle532S=10;   % verrauschter, wollen durch 
@@ -1066,7 +1068,7 @@ if refer(iter) ./ BSR532sollarr(j) > 1+gut ./ 100,          % BSR zu gro?
         LR532arr(wowolke,j) = LRobergr; hz532=hz532+1; 
         if (BSRAtFit532arr(j) > 2 && hz532 < hzlim), BSRAtFit532arr(j) = BSRAtFit532arr(j)./1.1; end, 
     end
-    if mymean(LR532arr(wowolke,j)) < 5, % 5 als Untergrenze
+    if mymean(LR532arr(wowolke,j)) < LRuntergr, % 5 als Untergrenze
         LR532arr(wowolke,j) = 5; tz532=tz532+1; 
         if (BSRAtFit532arr(j) < 1e6 && tz532 < tzlim), BSRAtFit532arr(j) = BSRAtFit532arr(j).*1.1; end, 
     end
@@ -1076,7 +1078,7 @@ elseif refer(iter) ./ BSR532sollarr(j) < 1-gut ./ 100,      % BSR zu klein
         LR532arr(wowolke,j) = LRobergr; hz532=hz532+1; 
          if (BSRAtFit532arr(j) > 2 && hz532 < hzlim), BSRAtFit532arr(j) = BSRAtFit532arr(j)./1.1; end, 
     end
-    if mymean(LR532arr(wowolke,j)) < 5, % 5 als Untergrenze
+    if mymean(LR532arr(wowolke,j)) < LRuntergr, % 5 als Untergrenze
         LR532arr(wowolke,j) = 5; tz532=tz532+1; 
         if (BSRAtFit532arr(j) < 1e6 && tz532 < tzlim), BSRAtFit532arr(j) = BSRAtFit532arr(j).*1.1; end, 
     end
@@ -1130,7 +1132,7 @@ if refer(iter) ./ BSR532Ssollarr(j) > 1+gut ./ 100,          % BSR zu gro?
         LR532Sarr(wowolke,j) = LRobergr; hz532S=hz532S+1; 
         if (BSRAtFit532Sarr(j) > 2 && hz532S < hzlim), BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j)./1.1; end, 
     end
-    if mymean(LR532Sarr(wowolke,j)) < 5, % 5 als Untergrenze
+    if mymean(LR532Sarr(wowolke,j)) < LRuntergr, % 5 als Untergrenze
         LR532Sarr(wowolke,j) = 5; tz532S=tz532S+1; 
         if (BSRAtFit532Sarr(j) < 1e6 && tz532S < tzlim), BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j).*1.1; end, 
     end
@@ -1140,7 +1142,7 @@ elseif refer(iter) ./ BSR532Ssollarr(j) < 1-gut ./ 100,      % BSR zu klein
         LR532Sarr(wowolke,j) = LRobergr; hz532S=hz532S+1; 
          if (BSRAtFit532Sarr(j) > 2 && hz532S < hzlim), BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j)./1.1; end, 
     end
-    if mymean(LR532Sarr(wowolke,j)) < 5, % 5 als Untergrenze
+    if mymean(LR532Sarr(wowolke,j)) < LRuntergr, % 5 als Untergrenze
         LR532Sarr(wowolke,j) = 5; tz532S=tz532S+1; 
         if (BSRAtFit532Sarr(j) < 1e6 && tz532S < tzlim), BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j).*1.1; end, 
     end
@@ -1194,7 +1196,7 @@ if refer(iter) ./ BSR355sollarr(j) > 1+gut ./ 100,          % BSR zu gro?
         LR355arr(wowolke,j) = LRobergr; hz355=hz355+1; 
         if (BSRAtFit355arr(j) > 2 && hz355 < hzlim), BSRAtFit355arr(j) = BSRAtFit355arr(j)./1.1; end, 
     end
-    if mymean(LR355arr(wowolke,j)) < 5, % 5 als Untergrenze
+    if mymean(LR355arr(wowolke,j)) < LRuntergr, % 5 als Untergrenze
         LR355arr(wowolke,j) = 5; tz355=tz355+1; 
         if (BSRAtFit355arr(j) < 1e6 && tz355 < tzlim), BSRAtFit355arr(j) = BSRAtFit355arr(j).*1.1; end, 
     end
@@ -1204,7 +1206,7 @@ elseif refer(iter) ./ BSR355sollarr(j) < 1-gut ./ 100,      % BSR zu klein
         LR355arr(wowolke,j) = LRobergr; hz355=hz355+1; 
          if (BSRAtFit355arr(j) > 2 && hz355 < hzlim), BSRAtFit355arr(j) = BSRAtFit355arr(j)./1.1; end, 
     end
-    if mymean(LR355arr(wowolke,j)) < 5, % 5 als Untergrenze
+    if mymean(LR355arr(wowolke,j)) < LRuntergr, % 5 als Untergrenze
         LR355arr(wowolke,j) = 5; tz355=tz355+1; 
         if (BSRAtFit355arr(j) < 1e6 && tz355 < tzlim), BSRAtFit355arr(j) = BSRAtFit355arr(j).*1.1; end, 
     end
