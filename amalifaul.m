@@ -16,7 +16,7 @@ function amalifaul(VonDat, BisDat)
 addpath('/atm_meas/polar_5_6/amali/processing/nadir/cloud/Amali_subroutines');  
 
 
-Speichernamepraefix = 'Version7_';            
+Speichernamepraefix = 'Version8_';            
 
 % reference Value for clean air beneath aircraft. 
 % KARL are average values from Ny-Alesund
