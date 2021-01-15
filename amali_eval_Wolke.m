@@ -36,8 +36,14 @@ elseif strcmp(DatStr(1:2), '19')
     Angstroem=1.2;
     speicherdir = '/atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2019/';
     amalidatendir='/atm_meas/polar_5_6/amali/data/mat/2019/';
+    
+    elseif strcmp(DatStr(1:2), '20')
+    campaign = 'MOSAICACA';
+    Angstroem=1.2;
+    speicherdir = '/atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2020/';
+    amalidatendir='/atm_meas/polar_5_6/amali/data/mat/2020/';
 else
-    disp('Von dieser Kampagne hab ikk noch nie watt jehoert!?')
+    disp('New campaign folders have to be set')
     return
 end
 WvlExpo = 4-Angstroem;
@@ -62,7 +68,7 @@ LRobergr = 120;        %
 LRuntergr = 3;
 LRerr = 2; % angenommener Fehler im LR  war 10
 Wolkenschwelle532=5;
-Wolkenschwelle532S=10;   % verrauschter, wollen durch
+Wolkenschwelle532S=10;   % verrauschter, wollen durch .... ?? hier fehlt was?
 Wolkenschwelle355=3;
 tzlim = 5; hzlim=5;  % limit f?r Hoch- Tiefzahl bei Iter LR
 % BSRAtFit532start = 1.4;      % besser als Inputparameter
@@ -92,8 +98,24 @@ diffisoll = 0.05;  % so gut wollen wir BSR bestimmen
 Hcalcrange =3500;    %2800
 
 % Rayleighstreuung aus Radiosonde NyA
+if strcmp(campaign, 'MOSAICACA')
+    ptuinfile='/atm_meas/awipev/lidar/karl/matlab/ptu/2009.mat';
+    load(ptuinfile)
+    ozoinfile='/atm_meas/awipev/lidar/karl/matlab/ozo/2009.mat';
+    load(ozoinfile)
+    load /atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2020/aerosol_background_karl/KARLaverageBSR532ausSommer
+    KarlH = H; % H wird sp?ter der AMALi Range-vektor
+    BSR532Karlmean= BSR532mean; BSR532Karlmedian = BSR532median;
+    BSR532SKarlmean= BSR532Smean; BSR532SKarlmedian = BSR532Smedian;
+    BSR355Karlmean= BSR355mean; BSR355Karlmedian = BSR355median;
+    load /atm_meas/polar_5_6/flight_data/gps/MOSAICACAGPS.txt -ascii
+    flugzeit=MOSAICACAGPS(:,1); 
+    flughoehe=MOSAICACAGPS(:,2);
+    wo=find(flughoehe > 10000);
+    flughoehe(wo)=NaN; 
 
-if strcmp(campaign, 'ACLOUD')
+
+elseif strcmp(campaign, 'ACLOUD')
     ptuinfile='/atm_meas/awipev/lidar/karl/matlab/ptu/1706.mat';
     load(ptuinfile)
     ozoinfile='/atm_meas/awipev/lidar/karl/matlab/ozo/1706.mat';

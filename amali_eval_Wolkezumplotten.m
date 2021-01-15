@@ -1,4 +1,4 @@
-function ok = amali_eval_Wolke(DatStr, aerofak, Speichernamepraefix, BSR532soll, BSRAtFit532start, Von, Bis)
+function ok = amali_eval_Wolkezumplotten(DatStr, aerofak, Speichernamepraefix, BSR532soll, BSRAtFit532start, Von, Bis)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % AMALi Auswertung
@@ -24,8 +24,10 @@ function ok = amali_eval_Wolke(DatStr, aerofak, Speichernamepraefix, BSR532soll,
 ok=-1;
 
 %
-disp("richtige Version")
+disp("Birtes Version")
 
+
+% Einstellungen fuer Kampagnen
 if strcmp(DatStr(1:2), '17')
     campaign = 'ACLOUD';
     Angstroem=1.4;
@@ -36,8 +38,14 @@ elseif strcmp(DatStr(1:2), '19')
     Angstroem=1.2;
     speicherdir = '/atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2019/';
     amalidatendir='/atm_meas/polar_5_6/amali/data/mat/2019/';
+    
+elseif strcmp(DatStr(1:2), '20')
+    campaign = 'MOSAICACA';
+    Angstroem=1.2;
+    speicherdir = '/atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2020/';
+    amalidatendir='/atm_meas/polar_5_6/amali/data/mat/2020/';
 else
-    disp('Von dieser Kampagne hab ikk noch nie watt jehoert!?')
+    disp('Campaign unknown')
     return
 end
 WvlExpo = 4-Angstroem;
@@ -48,8 +56,7 @@ else
     teilzeitjob = 0;
 end
 
-% Definitionen
-
+% Definitionen ------------------------------------------------------------
 Wvl532 =5.3207e-7;
 Wvl355 =3.5471e-7;
 LR532aerosol=23;
@@ -62,11 +69,16 @@ LRobergr = 120;        %
 LRuntergr = 3;
 LRerr = 2; % angenommener Fehler im LR  war 10
 Wolkenschwelle532=5;
-Wolkenschwelle532S=10;   % verrauschter, wollen durch
+Wolkenschwelle532S=10;   % verrauschter, deshalb hoeher
 Wolkenschwelle355=3;
-tzlim = 5; hzlim=5;  % limit f?r Hoch- Tiefzahl bei Iter LR
+
+tzlim = 5; hzlim=5;  % limit f?r Hoch- Tiefzahl bei Iterationenen, so oft versucht er es nochmal wenn LR auserhalb des erlaubten Berreiches liegt
+
+% BSR at LBC
 % BSRAtFit532start = 1.4;      % besser als Inputparameter
 BSRAtFit355start = 1+(BSRAtFit532start-1) ./ 1.5.^WvlExpo; % rechnen 355er Randbedingung aus der von 532
+
+%minimum BSR at UBC
 BSR532mintrust  = 1.2;
 BSR532Smintrust  = 1.2;
 BSR355mintrust  = 1 + (BSR532mintrust -1) ./ 1.5.^WvlExpo;
@@ -76,10 +88,12 @@ BSR355mintrust  = 1 + (BSR532mintrust -1) ./ 1.5.^WvlExpo;
 % BSR355soll kann erst berechnet werden, wenn BSR532(guteaeroposi) aus KARL
 % bekannt ist
 % BSR355soll = 1 + (BSR532soll-1) ./ 1.5.^WvlExpo;
-% nur f?er den Notfall (NaN im KARL oder keine guteaeroposi):
+
+% nur f?er den Notfall (NaN im KARL oder keine guteaeroposi) fuer UBC:
 BSR532sollnotfall = 1.3;
 BSR532Ssollnotfall = 1.3;
 BSR355sollnotfall = 1 + (BSR532sollnotfall-1) ./ 1.5.^WvlExpo;
+
 
 UeberlappEnde=300; % [m]
 pretrigrange=1:400;
@@ -87,13 +101,32 @@ pretriggerbins=405;
 Schwelle = 1e-8; % Signal (P) nur noch Rauschen
 
 UeberlappEndeposi = round(UeberlappEnde ./ 7.5);
+
 diffisoll = 0.05;  % so gut wollen wir BSR bestimmen
 %FitRange=[2600, 2700]; %Standardwahl, wenn es nichts Besseres gibt
-Hcalcrange =3500;    %2800
 
-% Rayleighstreuung aus Radiosonde NyA
+Hcalcrange =3500;    %muss hoch gesetzt werden wenn dsa Flugzeug ueber 3500 m fliegt
 
-if strcmp(campaign, 'ACLOUD')
+
+
+% ------------------------------------------------------------------------
+% Rayleighstreuung aus median Radiosonde NyA, laedt meadian KARL
+if strcmp(campaign, 'MOSAICACA')
+    ptuinfile='/atm_meas/awipev/lidar/karl/matlab/ptu/2009.mat';
+    load(ptuinfile)
+    ozoinfile='/atm_meas/awipev/lidar/karl/matlab/ozo/2009.mat';
+    load(ozoinfile)
+    load /atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2020/aerosol_background_karl/KARLaverageBSR532ausSommer
+    KarlH = H; % H wird sp?ter der AMALi Range-vektor
+    BSR532Karlmean= BSR532mean; BSR532Karlmedian = BSR532median;
+    BSR532SKarlmean= BSR532Smean; BSR532SKarlmedian = BSR532Smedian;
+    BSR355Karlmean= BSR355mean; BSR355Karlmedian = BSR355median;
+    load /atm_meas/polar_5_6/flight_data/gps/MOSAICACAGPS.txt -ascii
+    flugzeit=MOSAICACAGPS(:,1);
+    flughoehe=MOSAICACAGPS(:,2);
+    wo=find(flughoehe > 10000);
+    flughoehe(wo)=NaN;
+elseif strcmp(campaign, 'ACLOUD')
     ptuinfile='/atm_meas/awipev/lidar/karl/matlab/ptu/1706.mat';
     load(ptuinfile)
     ozoinfile='/atm_meas/awipev/lidar/karl/matlab/ozo/1706.mat';
@@ -104,10 +137,10 @@ if strcmp(campaign, 'ACLOUD')
     BSR532SKarlmean= BSR532Smean; BSR532SKarlmedian = BSR532Smedian;
     BSR355Karlmean= BSR355mean; BSR355Karlmedian = BSR355median;
     load /atm_meas/polar_5_6/flight_data/gps/ACLOUDGPS.txt -ascii
-    flugzeit=ACLOUDGPS(:,1); 
+    flugzeit=ACLOUDGPS(:,1);
     flughoehe=ACLOUDGPS(:,2);
     wo=find(flughoehe > 10000);
-    flughoehe(wo)=NaN; 
+    flughoehe(wo)=NaN;
 elseif strcmp(campaign, 'AFLUX')
     ptuinfile='/atm_meas/awipev/lidar/karl/matlab/ptu/1904.mat';
     load(ptuinfile)
@@ -119,7 +152,7 @@ elseif strcmp(campaign, 'AFLUX')
     BSR532SKarlmean= BSR532Smean.*aerofak; BSR532SKarlmedian = BSR532Smedian.*aerofak;
     BSR355Karlmean= BSR355mean.*aerofak; BSR355Karlmedian = BSR355median.*aerofak;
     load /atm_meas/polar_5_6/flight_data/gps/AFLUXGPS.txt -ascii
-    flugzeit=AFLUXGPS(:,1); 
+    flugzeit=AFLUXGPS(:,1);
     flughoehe=AFLUXGPS(:,2);
     wo=find(flughoehe > 10000);
     flughoehe(wo)=NaN; %#ok<*FNDSB>
@@ -127,7 +160,8 @@ end
 
 meanO3profile=(mymean(OZOO3Density'))';
 Density = density(PTUPressure, PTUPressure./100, PTUTemperature,ones(size(PTUTemperature)).*2); %#ok<*NODEF>
-%Extinktion nurr Streuanteil (99% ausmacht)
+%Extinktion nur Streuanteil (99% ausmacht)
+%alpha ist gleich fuer beide polarisationen
 PTUAlRay532 = Density .* raytotwq( Wvl532, PTUTemperature, Density);
 PTUAlRay355 = Density .* raytotwq( Wvl355, PTUTemperature, Density);
 % Rayleigh R?ckstreuung (die schwach polaris.- und temp- abhaengig ist
@@ -135,8 +169,9 @@ PTUAlRay355 = Density .* raytotwq( Wvl355, PTUTemperature, Density);
 PTUBeRa532=Density.*raybckwq (Wvl532,'p','p', PTUTemperature, Density);
 PTUBeRa532S=Density.*raybckwq (Wvl532,'p','s', PTUTemperature, Density);
 PTUBeRa355=Density.*raybckwq (Wvl355,'p','u', PTUTemperature, Density);
+
 % Korrektur durch molek. Absorption, die praktisch nur durch O3
-% vor allem wichit in Strato
+% vor allem wichig in Strato - hier vermutlich egal
 ptudimen=size(PTUAlRay355);
 for j=1:ptudimen(2)
     ARayab532=meanO3profile.*o3abswq(Wvl532,PTUTemperature(:,j));
@@ -145,7 +180,7 @@ for j=1:ptudimen(2)
     PTUAlRay355(:,j)=PTUAlRay355(:,j)+ARayab355;
 end
 
-% fuer Jun 2017 bei 86 Sonden Streuung etwa 7%
+
 % gemittelte Profile aus Ny-Alesund
 % noch Ny_Alesund H?henvektor
 NAlRay532=(mymean(PTUAlRay532'))';
@@ -155,6 +190,7 @@ NBeRa355=(mymean(PTUBeRa355'))';
 NBeRa532S=(mymean(PTUBeRa532S'))';
 NH = PTUHeight(:,1);
 NDensity=(mymean(Density'))';
+
 % In den ersten bins aus Ny-Alesund kann NaN stehen, dies interpolieren wir
 % weg
 tmp=real(log(NAlRay532)); %gerade kommt raus, weil Rayleigh profil quasi exponentiell (folgt Luftdichte)
@@ -215,7 +251,7 @@ NBeRa355 = exp(tmp);
 
 
 
-
+%-------------------------------------------------------------------------
 
 
 % noch nicht fertig
@@ -251,14 +287,10 @@ NBeRa355 = exp(tmp);
 
 
 
+%-------------------------------------------------------------------------
 
+% Einlesen der Amali-Lidardaten
 
-% Einlesen der Lidardaten
-
-% amalifile='/lidar4/bkulla/Amali/ACLOUD.mat'
-% load(amalifile)
-% height=height_rounded_vector(2:end);
-% range=
 
 % Fuer alte Datenstruktur: datum=[DatStr '/'];
 %aus unerfindlichen gruenden haben die neuen matlabfiles keine nullen vor dem Monat
@@ -346,6 +378,9 @@ else
         P532SCbackground=zeros(entries,1);
         P355Cbackground=zeros(entries,1);
         
+        
+        %spatial offsets - personal communication Roland Neuber, Checked so
+        %that cloud tops align. 
         vs532p=-1;
         vs532s=-1;
         vs355=+1;
@@ -581,9 +616,9 @@ else
             Psoll355=Ptheo355 ./Ptheo355(UeberlappEndeposi).*P355Klett(UeberlappEndeposi,j);
             ichmerkmirkomischepositionen = 0;
             
-          
             
             
+ % also da wo            
             % "select" die guten H?henbins, in denen gerechnet werden soll.
             %
             Sel532P = connrnge( H >= 0 & H <= Hcalcrange & ...
@@ -645,13 +680,15 @@ else
             % 532P
             condi=1; iter=0; itmax=600;
             hz532=0;
+            
+            %finde den Berreich als 'clear '  
             [VoI,BiI]= minintsuche(abs(Psoll532(Sel532P(40:200))-P532Klett(Sel532P(40:200),j)),40);
             clearint=VoI:BiI;
             while condi
                 iter = iter+1;
                 if iter > itmax, condi = 0; end
                 
-                BSRAtFiterr = BSRAtFit532arr(j) ./ 5;
+                BSRAtFiterr = BSRAtFit532arr(j) ./ 5; %warum wird hier durch 5 geteilt irgendwas fuer fehlerabschaetzung
                 [Beta, dBdR532, dBdLR532, dBdP532, CLidar] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Kletterr(Sel532P,j), ...
                     LR532arr(Sel532P,j), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
                 Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);
@@ -668,128 +705,41 @@ else
                 
                 deltasoll = BSR532mintrust - tmp;
                 deltab=(tmp2-tmp);
+                
+                %Zum plotten der zwischenschritte
+                 BetaKlett1(:,iter,j)= Beta;
+                 LBCKlett1(:,j)=BSRAtFit532arr(j);
+                 UBCKlett1(:,iter,j)=  Btemp532;
+                 CKlett1(:,iter,j)=CLidar;
+                 clearKlett1(:,iter,j)=clearint;
+                 HKlett1(:,j)=H(Sel532P);
+                 
                 if abs(deltasoll) > 0.01
                     %w=(BSR532sollarr(j) - tmp) ./ deltab;
                     BSRAtFit532arr(j) = BSRAtFit532arr(j) +1./deltab.*deltasoll;
                     if BSRAtFit532arr(j) > 1e6, hz532=hz532+1; BSRAtFit532arr(j) =1e6; end
                 else
-                    condi=0; %disp('bringt nichts mehr'),
+                    condi=0; 
+                    Abbruch532(j)= Abbruch532(j)+100;%disp('bringt nichts mehr'),
                 end
                 diffi = abs(tmp - BSR532mintrust);
                 if abs(diffi) < diffisoll, condi=0;  end  % normales Ende
-                if hz532 >hzlim, condi = 0; end   % Rdbeding. irrelevant
+                if hz532 >hzlim, condi = 0;
+                    Abbruch532(j)=Abbruch532(j)+200
+                end   % Rdbeding. irrelevant
                 
                 % deltab
                 % qq=BSRAtFit532arr(j)
             end % 1. while
             
             
-            if tmp < BSR532mintrust  % noetig falls iter > itmax. % hier ist ein Logikfehler da muss diffi noch abgezogen werden
+            if tmp < (BSR532mintrust-diffisoll)  % noetig falls iter > itmax.
                 Btemp532=Btemp532./tmp.*BSR532mintrust;
+                %gesamtes Profil wird skaliert das UBC mindestens der dem
+                %mintrust entspricht
             end
             wo532= find(Btemp532 < Wolkenschwelle532 );    %& H< hwo1);
-            
-            
-            
-            %
-            % 532S
-            
-            condi=1; iter=0; itmax=600;
-            hz532S=0;
-            [VoI,BiI]= minintsuche(abs(Psoll532S(Sel532S(40:200))-P532SKlett(Sel532S(40:200),j)),40);
-            clearint=VoI:BiI;
-            while condi
-                iter = iter+1;
-                if iter > itmax, condi = 0; end
-                
-                BSRAtFiterr = BSRAtFit532Sarr(j) ./ 5;
-                [Beta, dBdR, dBdLR, dBdP532, CLidar] = klettinv_ableit4( BSRAtFit532Sarr(j), FitRangearr(:,j), H(Sel532S), P532SKlett(Sel532S,j), P532SKletterr(Sel532S,j), ...
-                    LR532Sarr(Sel532S,j), AlRay532(Sel532S,1), BeRa532S(Sel532S,1)); %BeRa = Beta Rayleigh (senkrecht)
-                Betaaer532S(Sel532S)=Beta-BeRa532S(Sel532S,1);
-                Betaaer532Serr(Sel532S,j)=abs(dBdR.*BSRAtFiterr)+abs(dBdLR.*LR532Sarrerr(Sel532S,j))+abs(dBdP532.*P532SKletterr(Sel532S,j));
-                Btemp532S(Sel532S)=Beta./BeRa532S(Sel532S,1); Btemp532Serr(Sel532S)=Betaaer532Serr(Sel532S,j)./BeRa532S(Sel532S,1);
-                tmp=mymean(Btemp532S(Sel532S(clearint)));
-                
-                [Beta2, ~, ~, ~, ~] = klettinv_ableit4( BSRAtFit532Sarr(j)+1, FitRangearr(:,j), H(Sel532S), P532SKlett(Sel532S,j), P532SKletterr(Sel532S,j), ...
-                    LR532Sarr(Sel532S,j), AlRay532(Sel532S,1), BeRa532S(Sel532S,1));
-                Betaaer532S_2(Sel532S)=Beta2-BeRa532S(Sel532S,1);
-                %Betaaer2err(Sel,j)=abs(dBdR2.*BSRAtFiterr)+abs(dBdLR2.*LR532arrerr(Sel,j))+abs(dBdP5322.*Perr(Sel,j));
-                Btemp532S_2(Sel532S)=Beta2./BeRa532S(Sel532S,1); %Btemp2err(Sel)=Betaaer2err(Sel,j)./BeRa532(Sel,1);
-                tmp2=mymean(Btemp532S_2(Sel532S(clearint)));
-                
-                deltasoll = BSR532Smintrust - tmp;
-                deltab=(tmp2-tmp);
-                if abs(deltasoll) > 0.01
-                    %w=(BSR532Ssollarr(j) - tmp) ./ deltab;
-                    BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j) +1./deltab.*deltasoll;
-                    if BSRAtFit532Sarr(j) > 1e6, hz532S=hz532S+1; BSRAtFit532Sarr(j) =1e6; end
-                else
-                    condi=0; %disp('bringt nichts mehr'),
-                end
-                diffi = abs(tmp - BSR532Smintrust);
-                if abs(diffi) < diffisoll, condi=0;  end  % normales Ende
-                if hz532S >hzlim, condi = 0; end   % Rdbeding. irrelevant
-                
-                % deltab
-                % qq=BSRAtFit532Sarr(j)
-            end % 1. while
-            
-            
-            if tmp < BSR532Smintrust % noetig falls iter > itmax. %check -- logikfehler? diffi
-                Btemp532S=Btemp532S./tmp.*BSR532Smintrust;
-                BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j) ./tmp.* BSR532Smintrust;
-            end
-            wo532S= find(Btemp532S < Wolkenschwelle532S );    %& H< hwo1);
-            
-            
-            %
-            % 355
-            
-            condi=1; iter=0; itmax=600;
-            hz355=0;
-            [VoI,BiI]= minintsuche(abs(Psoll355(Sel355P(40:200))-P355Klett(Sel355P(40:200),j)),40);
-            clearint=VoI:BiI;
-            while condi
-                iter = iter+1;
-                if iter > itmax, condi = 0; end
-                
-                BSRAtFiterr = BSRAtFit355arr(j) ./ 5;
-                [Beta, dBdR355, dBdLR355, dBdP355, CLidar] = klettinv_ableit4( BSRAtFit355arr(j), FitRangearr(:,j), H(Sel355P), P355Klett(Sel355P,j), P355Kletterr(Sel355P,j), ...
-                    LR355arr(Sel355P,j), AlRay355(Sel355P,1), BeRa355(Sel355P,1));
-                Betaaer355(Sel355P)=Beta-BeRa355(Sel355P,1);
-                Betaaer355err(Sel355P,j)=abs(dBdR355.*BSRAtFiterr)+abs(dBdLR355.*LR355arrerr(Sel355P,j))+abs(dBdP355.*P355Kletterr(Sel355P,j));
-                Btemp355(Sel355P)=Beta./BeRa355(Sel355P,1); Btemp355err(Sel355P)=Betaaer355err(Sel355P,j)./BeRa355(Sel355P,1);
-                tmp=mymean(Btemp355(Sel355P(clearint)));
-                
-                [Beta2,~, ~, ~, ~] = klettinv_ableit4( BSRAtFit355arr(j)+1, FitRangearr(:,j), H(Sel355P), P355Klett(Sel355P,j), P355Kletterr(Sel355P,j), ...
-                    LR355arr(Sel355P,j), AlRay355(Sel355P,1), BeRa355(Sel355P,1));
-                BetaAer355_2(Sel355P)=Beta2-BeRa355(Sel355P,1);
-                %BetaAer355_2err(Sel355P,j)=abs(dBdR3552.*BSRAtFiterr)+abs(dBdLR3552.*LR355arrerr(Sel355P,j))+abs(dBdP3552.*P355Kletterr(Sel355P,j));
-                Btemp355_2(Sel355P)=Beta2./BeRa355(Sel355P,1); %Btemp355_2err(Sel355P)=BetaAer355_2err(Sel355P,j)./BeRa355(Sel355P,1);
-                tmp2=mymean(Btemp355_2(Sel355P(clearint)));
-                
-                deltasoll = BSR355mintrust - tmp;
-                deltab=(tmp2-tmp);
-                if abs(deltasoll) > 0.01
-                    %w=(BSR355sollarr(j) - tmp) ./ deltab;
-                    BSRAtFit355arr(j) = BSRAtFit355arr(j) +1./deltab.*deltasoll;
-                    if BSRAtFit355arr(j) > 1e6, hz355=hz355+1; BSRAtFit355arr(j) =1e6; end
-                else
-                    condi=0; %disp('bringt nichts mehr'),
-                end
-                diffi = abs(tmp - BSR355mintrust);
-                if abs(diffi) < diffisoll, condi=0;  end  % normales Ende
-                if hz355 >hzlim, condi = 0; end   % Rdbeding. irrelevant
-                
-                % deltab
-                % qq=BSRAtFit355arr(j)
-            end % 1. while
-            
-            
-            if tmp < BSR355mintrust  % noetig falls iter > itmax.
-                Btemp355=Btemp355./tmp.*BSR355mintrust;
-            end
-            wo355= find(Btemp355 < Wolkenschwelle355 );    %& H< hwo1);
+      
             
             
             % alleaeroposi=sort(cat(1,wo532,wo532S,wo355));
@@ -798,16 +748,17 @@ else
             % woaerosol=[1, alleaeroposi(da2+1)];
             % stimmt das? Wir brauchen es nicht
             
-            woaerosol = find(Btemp532 < Wolkenschwelle532 & Btemp532S < Wolkenschwelle532S & Btemp355 < Wolkenschwelle355);
+            woaerosol = find(Btemp532 < Wolkenschwelle532);
             LR532arr(woaerosol,j) = LR532aerosol;
             LR532Sarr(woaerosol,j) = LR532Saerosol;
             LR355arr(woaerosol,j) = LR355aerosol;
-            guteaeroposi= connrnge(H>  UeberlappEnde & H < hwo1 & Btemp532 < Wolkenschwelle532 & Btemp532S < Wolkenschwelle532 & Btemp355 < Wolkenschwelle355); % das sucht den laengsten zusammenhaengenden Bereich ohne Wolken
+            guteaeroposi= connrnge(H>  UeberlappEnde & H < hwo1 & Btemp532 < Wolkenschwelle532); % das sucht den laengsten zusammenhaengenden Bereich ohne Wolken
             if length(guteaeroposi) > 1
                 guteaeroposi = (guteaeroposi(1):guteaeroposi(2));%geeingnete position fuer vergleich (kontrollrange fuer BSR355soll
             else
                 guteaeroposi = 20:40;  % irgendwelche Positionen dicht unter Flugzeug
                 ichmerkmirkomischepositionen = 1;
+                Abbruch532 = Abbruch532+10
             end
             
             
@@ -820,9 +771,9 @@ else
             
             BSR532haben = mymedian(Btemp532(guteaeroposi));      % war mean
             BSR532sollarr(j)=mymedian(BSR532Karlmedianvgl(guteaeroposi)); %BSRsoll ist jetzt das ziel fuer die upper boundary condition
-            if BSR532sollarr(j) < BSR532mintrust  || ~isfinite(BSR532sollarr(j))
+            if BSR532sollarr(j) < BSR532mintrust-diffisoll  || ~isfinite(BSR532sollarr(j))
                 BSR532sollarr(j) = BSR532sollnotfall;
-                Abbruch532(j) = Abbruch532(j)+0.3;
+                Abbruch532(j) = Abbruch532(j)+0.3; %????????????????????????????????????????????????
             end
             
             
@@ -849,6 +800,17 @@ else
                 Btemp532_2(Sel532P)=Beta2./BeRa532(Sel532P,1); Btemp532_2err(Sel532P)=BetaAer532_2err(Sel532P,j)./BeRa532(Sel532P,1);
                 BSR532haben2 = mymedian(Btemp532_2(guteaeroposi));   % war mean
                 deltab=(BSR532haben2-BSR532haben);
+                
+                
+                 BetaKlett2(:,iter,j)= Beta;
+                 LBCKlett2(:,j)=BSRAtFit532arr(j);
+                 UBCKlett2(:,iter,j)=  Btemp532;
+                 LRKlett2(:,iter,j)= LR532arr(Sel532P,j);
+                 CKlett2(:,iter,j)=CLidar;
+                 clearKlett2(:,iter,j)=guteaeroposi;
+                 HKlett2(:,j)=H(Sel532P);
+                 
+                 
                 if abs(deltab) > 0.01
                     w=(BSR532sollarr(j) - BSR532haben) ./ deltab;
                     BSRAtFit532arr(j) = BSRAtFit532arr(j) + w.*0.2;
@@ -863,112 +825,12 @@ else
             
             %sporadisch kommen zu niedrige Rd-bedingungen vor, weil vermutlich die
             %LR total falsch sind. Dies wird hier abgefangen: (gefunden bei 532S)
-            if BSRAtFit532arr(j) < BSR532mintrust %ggf logikfehler
+            if BSRAtFit532arr(j) < BSR532mintrust -diffisoll
                 BSRAtFit532arr(j) = BSR532mintrust;
-                Abbruch532(j) = Abbruch532(j)+0.03;
+                Abbruch532(j) = Abbruch532(j)+20;
             end
             
             
-            % 532S
-            
-            if BSR532Ssollarr(j) < BSR532Smintrust || ~isfinite(BSR532Ssollarr(j))
-                BSR532Ssollarr(j) = BSR532Ssollnotfall;
-                Abbruch532S(j) = Abbruch532S(j)+0.3;
-            end
-            
-            condi=1; iter=0; itmax=500;
-            controllBSRWert532S=zeros(itmax,1);
-            while condi
-                iter=iter+1;
-                if iter >= itmax, condi=0; disp('trotz langer, muehsamer Suche keine Konvergenz gefunden 532S'); j, end
-                
-                BSRAtFiterr = BSRAtFit532Sarr(j) ./ 5;
-                [Beta, dBdR, dBdLR, dBdP532, CLidar] = klettinv_ableit4( BSRAtFit532Sarr(j), FitRangearr(:,j), H(Sel532S), P532SKlett(Sel532S,j), P532SKletterr(Sel532S,j), ...
-                    LR532Sarr(Sel532S,j), AlRay532(Sel532S,1), BeRa532S(Sel532S,1));
-                Betaaer532S(Sel532S)=Beta-BeRa532S(Sel532S,1);
-                Betaaer532Serr(Sel532S,j)=abs(dBdR.*BSRAtFiterr)+abs(dBdLR.*LR532Sarrerr(Sel532S,j))+abs(dBdP532.*P532SKletterr(Sel532S,j));
-                Btemp532S(Sel532S)=Beta./BeRa532S(Sel532S,1); Btemp532Serr(Sel532S)=Betaaer532Serr(Sel532S,j)./BeRa532S(Sel532S,1);
-                BSR532Shaben = mymedian(Btemp532S(guteaeroposi));    % mean
-                
-                q=BSRAtFit532Sarr(j)+0.2;
-                
-                [Beta2, dBdR, dBdLR, dBdP532, CLidar] = klettinv_ableit4( q, FitRangearr(:,j), H(Sel532S), P532SKlett(Sel532S,j), P532SKletterr(Sel532S,j), ...
-                    LR532Sarr(Sel532S,j), AlRay532(Sel532S,1), BeRa532S(Sel532S,1));
-                Betaaer532S_2(Sel532S)=Beta2-BeRa532S(Sel532S,1);
-                Betaaer532S_2err(Sel532S,j)=abs(dBdR.*BSRAtFiterr)+abs(dBdLR.*LR532Sarrerr(Sel532S,j))+abs(dBdP532.*P532SKletterr(Sel532S,j));
-                Btemp532S_2(Sel532S)=Beta2./BeRa532S(Sel532S,1); Btemp532S_2err(Sel532S)=Betaaer532S_2err(Sel532S,j)./BeRa532S(Sel532S,1);
-                BSR532Shaben2 = mymedian(Btemp532S_2(guteaeroposi));      % mean
-                deltab=(BSR532Shaben2-BSR532Shaben);
-                if abs(deltab) > 0.01
-                    w=(BSR532Ssollarr(j) - BSR532Shaben) ./ deltab;
-                    BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j) + w.*0.2;
-                else
-                    condi=0; %disp('bringt nichts mehr'),
-                end
-                diffi = abs(BSR532Shaben - BSR532Ssollarr(j));
-                if abs(diffi) < diffisoll, condi=0;  end  % normales Ende
-                
-                controllBSRWert532S(iter) =  BSR532haben;
-            end % while f?r die Randbedingung
-            
-            %sporadisch kommen zu niedirige Rd-bedingungen vor, weil vermutlich die
-            %LR total falsch sind. Dies wird hier abgefangen: (gefunden bei 532S)
-            if BSRAtFit532Sarr(j) < BSR532Smintrust
-                BSRAtFit532Sarr(j) = BSR532Smintrust;
-                Abbruch532S(j) = Abbruch532S(j)+0.03;
-            end
-            
-            
-            % 355
-            
-            BSR355sollarr(j)=mymedian(BSR355Karlmedianvgl(guteaeroposi));
-            if BSR355sollarr(j) < BSR355mintrust || ~isfinite(BSR355sollarr(j))
-                BSR355sollarr(j) = BSR355sollnotfall;
-                Abbruch355(j) = Abbruch355(j)+0.3;
-            end
-            
-            
-            condi=1; iter=0; itmax=500;
-            controllBSRWert=zeros(itmax,1);
-            while condi
-                iter=iter+1;
-                if iter >= itmax, condi=0; disp('trotz langer, muehsamer Suche keine Konvergenz gefunden 355'); j, end
-                
-                BSRAtFiterr = BSRAtFit355arr(j) ./ 5;
-                [Beta, dBdR355, dBdLR355, dBdP355, CLidar] = klettinv_ableit4( BSRAtFit355arr(j), FitRangearr(:,j), H(Sel355P), P355Klett(Sel355P,j), P355Kletterr(Sel355P,j), ...
-                    LR355arr(Sel355P,j), AlRay355(Sel355P,1), BeRa355(Sel355P,1));
-                Betaaer355(Sel355P)=Beta-BeRa355(Sel355P,1);
-                Betaaer355err(Sel355P,j)=abs(dBdR355.*BSRAtFiterr)+abs(dBdLR355.*LR355arrerr(Sel355P,j))+abs(dBdP355.*P355Kletterr(Sel355P,j));
-                Btemp355(Sel355P)=Beta./BeRa355(Sel355P,1); Btemp355err(Sel355P)=Betaaer355err(Sel355P,j)./BeRa355(Sel355P,1);
-                BSR355haben = mymedian(Btemp355(guteaeroposi)); % war mymean
-                
-                q=BSRAtFit355arr(j)+0.2;
-                
-                [Beta2, dBdR355, dBdLR355, dBdP355, CLidar] = klettinv_ableit4( q, FitRangearr(:,j), H(Sel355P), P355Klett(Sel355P,j), P355Kletterr(Sel355P,j), ...
-                    LR355arr(Sel355P,j), AlRay355(Sel355P,1), BeRa355(Sel355P,1));
-                BetaAer355_2(Sel355P)=Beta2-BeRa355(Sel355P,1);
-                BetaAer355_2err(Sel355P,j)=abs(dBdR355.*BSRAtFiterr)+abs(dBdLR355.*LR355arrerr(Sel355P,j))+abs(dBdP355.*P355Kletterr(Sel355P,j));
-                Btemp355_2(Sel355P)=Beta2./BeRa355(Sel355P,1); Btemp355_2err(Sel355P)=BetaAer355_2err(Sel355P,j)./BeRa355(Sel355P,1);
-                BSR355haben2 = mymedian(Btemp355_2(guteaeroposi));   % war mean
-                deltab=(BSR355haben2-BSR355haben);
-                if abs(deltab) > 0.01
-                    w=(BSR355sollarr(j) - BSR355haben) ./ deltab;
-                    BSRAtFit355arr(j) = BSRAtFit355arr(j) + w.*0.2;
-                else
-                    condi=0; %disp('bringt nichts mehr'),
-                end
-                diffi = abs(BSR355haben - BSR355sollarr(j));
-                if abs(diffi) < diffisoll, condi=0;  end  % normales Ende
-                
-                controllBSRWert(iter) =  BSR355haben;
-            end % while f?r die Randbedingung
-            
-            %sporadisch kommen zu niedirige Rd-bedingungen vor, weil vermutlich die
-            %LR total falsch sind. Dies wird hier abgefangen:
-            if BSRAtFit355arr(j) < BSR355mintrust
-                BSRAtFit355arr(j) = BSR355mintrust;
-                Abbruch355(j) = Abbruch355(j)+0.03;
-            end
             
             
             % Das ist jetzt der Casus Knacktus, Iteration des LR
@@ -978,8 +840,13 @@ else
             % bekommen besteht darin, iterativ das LR in der Wolke solange
             % anzupassen, bis die L?sung stimmt. Dies geschieht hier
             
+            %das ist sinnlos. wir sagen oben soll es stimmen, aber oben ist
+            %vom LR ueberhaupt nicht beeinflusst. 
+            
+            
+            
             % wir passen vor der finalen Iteration die Wolkenmaske noch einmal an
-            wowolke = find(Btemp532 > Wolkenschwelle532 | Btemp532S > Wolkenschwelle532S | Btemp355 > Wolkenschwelle355);
+            wowolke = find(Btemp532 > Wolkenschwelle532);
             if ~isempty(wowolke)% sonst ja sinnlos
                 
                 woaerosol = find(Btemp532 <= Wolkenschwelle532 & Btemp532S <= Wolkenschwelle532S & Btemp355 <= Wolkenschwelle355);
@@ -993,7 +860,7 @@ else
                 % 532P
                 condi=1; iter=0; itmax=500;
                 hz532=0; tz532=0;  % hz532 / tz532 Zaehler fuer hohe - tiefe Werte
-                gut = 3; % Prozent-Abweichung wie gut mirt BSR an BSR532soll kommen
+                gut = 1; % Prozent-Abweichung wie gut muss BSR an BSR532soll kommen
                 refer=zeros(itmax,1);  refer2=zeros(itmax,1);
                 while condi
                     iter = iter+1;
@@ -1022,7 +889,15 @@ else
                     diffi = BSR532sollarr(j) - refer(iter);
                     deltax=diffi./dxdlr;
                     
-                    
+                 BetaKlett3(:,iter,j)= Beta;
+                 LBCKlett3(:,j)=BSRAtFit532arr(j);
+                 UBCKlett3(:,iter,j)=  Btemp532;
+                 LRKlett3(:,iter,j)= LR532arr(Sel532P,j);
+                 CKlett3(:,iter,j)=CLidar;
+                 clearKlett3(:,iter,j)=guteaeroposi;
+                 HKlett3(:,j)=H(Sel532P);
+                 
+                 
                     if refer(iter) ./ BSR532sollarr(j) > 1+gut ./ 100          % BSR zu gro?
                         LR532arr(wowolke,j) = LR532arr(wowolke,j) +deltax;
                         if mymean(LR532arr(wowolke,j)) > LRobergr
@@ -1054,132 +929,7 @@ else
                 end    % while des LR
                 
                 
-                % 532S (LR Iter)
-                condi=1; iter=0; itmax=500;
-                hz532S=0; tz532S=0;  % hz532S / tz532S Zaehler fuer hohe - tiefe Werte
-                gut = 3; % Prozent-Abweichung wie gut mirt BSR an BSR532Ssoll kommen
-                refer=zeros(itmax,1);  refer2=zeros(itmax,1);
-                while condi
-                    iter = iter+1;
-                    if iter ==1, bininlrschleife532S(j) = 1; end
-                    if iter > 500, condi=0; disp('keine Konvergenz!'); Abbruch532S(j)=Abbruch532S(j)+4;   end
-                    
-                    [Beta, dBdR532S, dBdLR532S, dBdP532S, CLidar532S] = klettinv_ableit4( BSRAtFit532Sarr(j), FitRangearr(:,j), H(Sel532S), P532SKlett(Sel532S,j), P532SKletterr(Sel532S,j), ...
-                        LR532Sarr(Sel532S,j), AlRay532(Sel532S,1), BeRa532S(Sel532S,1));
-                    Betaaer532S(Sel532S)=Beta-BeRa532S(Sel532S,1);
-                    Betaaer532Serr(Sel532S,j)=abs(dBdR532S.*BSRAtFiterr)+abs(dBdLR532S.*LR532Sarrerr(Sel532S,j))+abs(dBdP532S.*P532SKletterr(Sel532S,j));
-                    Btemp532S(Sel532S)=Beta./BeRa532S(Sel532S,1); Btemp532Serr(Sel532S)=Betaaer532Serr(Sel532S,j)./BeRa532S(Sel532S,1);
-                    BSR532Shaben = mymedian(Btemp532S(guteaeroposi));      %% war mean
-                    
-                    LRtest=LR532Sarr(:,j); LRtest(wowolke)=LRtest(wowolke)+1;
-                    
-                    [Beta2, dB532S2dR, dB532S2dLR, dB532S2dP, CLidar2] = klettinv_ableit4( BSRAtFit532Sarr(j), FitRangearr(:,j), H(Sel532S), P532SKlett(Sel532S,j), P532SKletterr(Sel532S,j), ...
-                        LRtest(Sel532S), AlRay532(Sel532S,1), BeRa532S(Sel532S,1));
-                    BetaAer532S_2(Sel532S)=Beta2-BeRa532S(Sel532S,1);
-                    BetaAer532S_2err(Sel532S,j)=abs(dB532S2dR.*BSRAtFiterr)+abs(dB532S2dLR.*LR532Sarrerr(Sel532S,j))+abs(dB532S2dP.*P532SKletterr(Sel532S,j));
-                    Btemp532S_2(Sel532S)=Beta2./BeRa532S(Sel532S,1); Btemp532S_2err(Sel532S)=BetaAer532S_2err(Sel532S,j)./BeRa532S(Sel532S,1);
-                    BSR532Shaben2 = mymedian(Btemp532S_2(guteaeroposi));    % mean
-                    
-                    refer(iter) = BSR532Shaben;
-                    refer2(iter) = BSR532Shaben2;
-                    dxdlr = refer2(iter)-refer(iter);
-                    diffi = BSR532Ssollarr(j) - refer(iter);
-                    deltax=diffi./dxdlr;
-                    
-                    
-                    if refer(iter) ./ BSR532Ssollarr(j) > 1+gut ./ 100         % BSR zu gro?
-                        LR532Sarr(wowolke,j) = LR532Sarr(wowolke,j) +deltax;
-                        if mymean(LR532Sarr(wowolke,j)) > LRobergr
-                            LR532Sarr(wowolke,j) = LRobergr; hz532S=hz532S+1;
-                            if (BSRAtFit532Sarr(j) > 2 && hz532S < hzlim), BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j)./1.1; end
-                        end
-                        if mymean(LR532Sarr(wowolke,j)) < LRuntergr % 5 als Untergrenze
-                            LR532Sarr(wowolke,j) = 5; tz532S=tz532S+1;
-                            if (BSRAtFit532Sarr(j) < 1e6 && tz532S < tzlim), BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j).*1.1; end
-                        end
-                    elseif refer(iter) ./ BSR532Ssollarr(j) < 1-gut ./ 100     % BSR zu klein
-                        LR532Sarr(wowolke,j) = LR532Sarr(wowolke,j) +deltax;
-                        if mymean(LR532Sarr(wowolke,j)) > LRobergr
-                            LR532Sarr(wowolke,j) = LRobergr; hz532S=hz532S+1;
-                            if (BSRAtFit532Sarr(j) > 2 && hz532S < hzlim), BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j)./1.1; end
-                        end
-                        if mymean(LR532Sarr(wowolke,j)) < LRuntergr % 5 als Untergrenze
-                            LR532Sarr(wowolke,j) = 5; tz532S=tz532S+1;
-                            if (BSRAtFit532Sarr(j) < 1e6 && tz532S < tzlim), BSRAtFit532Sarr(j) = BSRAtFit532Sarr(j).*1.1; end
-                        end
-                    else
-                        condi=0; Abbruch532S(j)=Abbruch532S(j)+1;  % das sch?ne Ende
-                    end
-                    
-                    if hz532S>=hzlim, condi = 0; Abbruch532S(j)=Abbruch532S(j)+3;  end      % disp('hz > 3'); i, end
-                    if tz532S>=tzlim, condi = 0; Abbruch532S(j)=Abbruch532S(j)+2;  end      % disp('tz > 3'); i, end
-                    
-                end    % while des LR
-                
-                
-                % und das huebsche lila (LR Iter)
-                
-                condi=1; iter=0; itmax=500;
-                hz355=0; tz355=0;  % hz355 / tz355 Zaehler fuer hohe - tiefe Werte
-                gut = 3; % Prozent-Abweichung wie gut mirt BSR an BSR355soll kommen
-                refer=zeros(itmax,1);  refer2=zeros(itmax,1);
-                while condi
-                    iter = iter+1;
-                    if iter ==1, bininlrschleife355(j) = 1; end
-                    if iter > 500, condi=0; disp('keine Konvergenz!'); Abbruch355(j)=Abbruch355(j)+4;   end
-                    
-                    [Beta, dBdR355, dBdLR355, dBdP355, CLidar355] = klettinv_ableit4( BSRAtFit355arr(j), FitRangearr(:,j), H(Sel355P), P355Klett(Sel355P,j), P355Kletterr(Sel355P,j), ...
-                        LR355arr(Sel355P,j), AlRay355(Sel355P,1), BeRa355(Sel355P,1));
-                    Betaaer355(Sel355P)=Beta-BeRa355(Sel355P,1);
-                    Betaaer355err(Sel355P,j)=abs(dBdR355.*BSRAtFiterr)+abs(dBdLR355.*LR355arrerr(Sel355P,j))+abs(dBdP355.*P355Kletterr(Sel355P,j));
-                    Btemp355(Sel355P)=Beta./BeRa355(Sel355P,1); Btemp355err(Sel355P)=Betaaer355err(Sel355P,j)./BeRa355(Sel355P,1);
-                    BSR355haben = mymedian(Btemp355(guteaeroposi));      %% war mean
-                    
-                    LRtest=LR355arr(:,j); LRtest(wowolke)=LRtest(wowolke)+1;
-                    
-                    [Beta2, dB2dR, dB2dLR, dB2dP, CLidar2] = klettinv_ableit4( BSRAtFit355arr(j), FitRangearr(:,j), H(Sel355P), P355Klett(Sel355P,j), P355Kletterr(Sel355P,j), ...
-                        LRtest(Sel355P), AlRay355(Sel355P,1), BeRa355(Sel355P,1));
-                    BetaAer355_2(Sel355P)=Beta2-BeRa355(Sel355P,1);
-                    BetaAer355_2err(Sel355P,j)=abs(dB2dR.*BSRAtFiterr)+abs(dB2dLR.*LR355arrerr(Sel355P,j))+abs(dB2dP.*P355Kletterr(Sel355P,j));
-                    Btemp355_2(Sel355P)=Beta2./BeRa355(Sel355P,1); Btemp355_2err(Sel355P)=BetaAer355_2err(Sel355P,j)./BeRa355(Sel355P,1);
-                    BSR355haben2 = mymedian(Btemp355_2(guteaeroposi));    % mean
-                    
-                    refer(iter) = BSR355haben;
-                    refer2(iter) = BSR355haben2;
-                    dxdlr = refer2(iter)-refer(iter);
-                    diffi = BSR355sollarr(j) - refer(iter);
-                    deltax=diffi./dxdlr;
-                    
-                    
-                    if refer(iter) ./ BSR355sollarr(j) > 1+gut ./ 100          % BSR zu gro?
-                        LR355arr(wowolke,j) = LR355arr(wowolke,j) +deltax;
-                        if mymean(LR355arr(wowolke,j)) > LRobergr
-                            LR355arr(wowolke,j) = LRobergr; hz355=hz355+1;
-                            if (BSRAtFit355arr(j) > 2 && hz355 < hzlim), BSRAtFit355arr(j) = BSRAtFit355arr(j)./1.1; end
-                        end
-                        if mymean(LR355arr(wowolke,j)) < LRuntergr
-                            LR355arr(wowolke,j) = 5; tz355=tz355+1;
-                            if (BSRAtFit355arr(j) < 1e6 && tz355 < tzlim), BSRAtFit355arr(j) = BSRAtFit355arr(j).*1.1; end
-                        end
-                    elseif refer(iter) ./ BSR355sollarr(j) < 1-gut ./ 100     % BSR zu klein
-                        LR355arr(wowolke,j) = LR355arr(wowolke,j) +deltax;
-                        if mymean(LR355arr(wowolke,j)) > LRobergr
-                            LR355arr(wowolke,j) = LRobergr; hz355=hz355+1;
-                            if (BSRAtFit355arr(j) > 2 && hz355 < hzlim), BSRAtFit355arr(j) = BSRAtFit355arr(j)./1.1; end
-                        end
-                        if mymean(LR355arr(wowolke,j)) < LRuntergr
-                            LR355arr(wowolke,j) = 5; tz355=tz355+1;
-                            if (BSRAtFit355arr(j) < 1e6 && tz355 < tzlim), BSRAtFit355arr(j) = BSRAtFit355arr(j).*1.1; end
-                        end
-                    else
-                        condi=0; Abbruch355(j)=Abbruch355(j)+1;  % das sch?ne Ende
-                    end
-                    
-                    
-                    if hz355>=hzlim, condi = 0; Abbruch355(j)=Abbruch355(j)+3;  end      % disp('hz > 3'); i, end
-                    if tz355>=tzlim, condi = 0; Abbruch355(j)=Abbruch355(j)+2;  end      % disp('tz > 3'); i, end
-                    
-                end    % while des LR
+               
                 
                 
                 

@@ -16,11 +16,11 @@ function amalifaul(VonDat, BisDat)
 addpath('/atm_meas/polar_5_6/amali/processing/nadir/cloud/Amali_subroutines');  
 
 
-Speichernamepraefix = 'Version8_';            
+Speichernamepraefix = 'VersionFIX_';            
 
 % reference Value for clean air beneath aircraft. 
 % KARL are average values from Ny-Alesund
-BSR532soll = 'KARL'; %1.3;
+BSR532soll = 'KARL';%1.2; % %1.3;
 
 %Anfangs(Rate)Wert der unteren Randbedingung vom Klett
 BSRAtFit532start = 1.4; 
@@ -64,7 +64,8 @@ for j=NStart:NEnd
 
    disp([upper(mfilename) ': Starting Data processing ...']);
    disp(['...of ', xdatum])
-   ok = amali_eval_Wolke(xdatum, 1, Speichernamepraefix, BSR532soll,BSRAtFit532start);
+   ok = amali_eval_Wolkezumplotten(xdatum, 1, Speichernamepraefix, BSR532soll,BSRAtFit532start,550,600);
+   %ok = amali_eval_Wolke(xdatum, 1, Speichernamepraefix, BSR532soll,BSRAtFit532start);
    %here aerofak is 1 because we assume aerosol load in NYA and below the
    %aircraft to be the same. if we are aware of deviations from the average
    %in NyA it may me adjusted
