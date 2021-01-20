@@ -64,7 +64,7 @@ for j=NStart:NEnd
 
    disp([upper(mfilename) ': Starting Data processing ...']);
    disp(['...of ', xdatum])
-   ok = amali_eval_Wolkezumplotten(xdatum, 1, Speichernamepraefix, BSR532soll,BSRAtFit532start,550,600);
+   ok = amali_eval_Wolkenur532(xdatum, 1, Speichernamepraefix, BSR532soll,BSRAtFit532start,550,600);
    %ok = amali_eval_Wolke(xdatum, 1, Speichernamepraefix, BSR532soll,BSRAtFit532start);
    %here aerofak is 1 because we assume aerosol load in NYA and below the
    %aircraft to be the same. if we are aware of deviations from the average
