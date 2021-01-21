@@ -666,6 +666,7 @@ else
             % stimmt das? Wir brauchen es nicht
             
             woaerosol = find(Btemp532 < Wolkenschwelle532);
+            wowolke = find(Btemp532 > Wolkenschwelle532);
             LR532arr(woaerosol,j) = LR532aerosol;
             %LR532Sarr(woaerosol,j) = LR532Saerosol;
             %LR355arr(woaerosol,j) = LR355aerosol;
@@ -736,7 +737,7 @@ else
                 UBCKlett2(:,iter,j)=  Btemp532;
                 LRKlett2(:,iter,j)= LR532arr(Sel532P,j);
                 CKlett2(:,iter,j)=CLidar532;
-                clearKlett2(:,iter,j)=guteaeroposi;
+                clearKlett2(guteaeroposi,iter,j)= 1;
                 HKlett2(:,j)=H(Sel532P);
                 
                 
@@ -761,8 +762,10 @@ else
             end
             
             
+            % Fehlt hier der Schritt wo er das LR fuer die Luft anpasst??? 
             
-            %LR variation rausgeloescht
+            
+            %LR variation hier rausgeloescht
             
             %matrizen werden zusammengesetzt
             %dritte Dimension 1 - 1.LR (theoretisches wasser), 2 -LR wie
@@ -793,57 +796,25 @@ else
             %attenuation
             AlphaAer532(:,j,1)=BetaAer532Klett(:,j).*LR532arr(:,j);
             %attenuation ist Backscatter (beta)*LR
-            AlphaAer532err(:,j,1)= abs(BetaAer532Kletterr(:,j).*LR532arr(:,j)) + abs(BetaAer532Klett(:,j).*LR532arrerr(:,j))
+            AlphaAer532err(:,j,1)= abs(BetaAer532Kletterr(:,j).*LR532arr(:,j)) + abs(BetaAer532Klett(:,j).*LR532arrerr(:,j));
             
+         
             
-            
-            
-            % finales Abspeichern: ----------------------------------------
-            
-            %matrizen werden zusammengesetzt
-            
-            
-            %             BSR532SKlett(Sel532S,j)=Btemp532S(Sel532S); BSR532SKletterr(Sel532S,j)=Btemp532Serr(Sel532S);
-            %             BetaAer532SKlett(Sel532S,j)=Betaaer532S(Sel532S); BetaAer532SKletterr(Sel532S,j)=Betaaer532Serr(Sel532S,j);
-            %             attenu532S(Sel532S,j) = P532SKlett(Sel532S,j).*H(Sel532S).^2 ./ CLidar532S(Sel532S(1));
-            %             attenu532Serr(Sel532S,j) = abs(P532SKlettnoise(Sel532S,j).*H(Sel532S).^2 ./ CLidar532S(Sel532S(1))) + abs(attenu532S(Sel532S,j) ./ CLidar532S(Sel532S(1)).*0.1.*CLidar532S(Sel532S(1)));
-            %             dBeta532SdP(Sel532S,j)=dBdP532S;
-            %             dBeta532SdR(Sel532S,j)=dBdR532S;
-            %             dBeta532SdLR(Sel532S,j)=dBdLR532S;
-            %             C532SLidar(Sel532S,j) =CLidar532S;
-            %             AlphaAer532S(:,j)=BetaAer532SKlett(:,j).*LR532Sarr(:,j);
-            %             AlphaAer532Serr(:,j)= abs(BetaAer532SKletterr(:,j).*LR532Sarr(:,j)) + abs(BetaAer532SKlett(:,j).*LR532Sarrerr(:,j));
-            %
-            %             BSR355Klett(Sel355P,j)=Btemp355(Sel355P); BSR355Kletterr(Sel355P,j)=Btemp355err(Sel355P);
-            %             BetaAer355Klett(Sel355P,j)=Betaaer355(Sel355P); BetaAer355Kletterr(Sel355P,j)=Betaaer355err(Sel355P,j);
-            %             attenu355P(Sel355P,j) = P355Klett(Sel355P,j).*H(Sel355P).^2 ./ CLidar355(Sel355P(1));
-            %             attenu355Perr(Sel355P,j) = abs(P355Klettnoise(Sel355P,j).*H(Sel355P).^2 ./ CLidar355(Sel355P(1))) + abs(attenu355P(Sel355P,j) ./ CLidar355(Sel355P(1)).*0.1.*CLidar355(Sel355P(1)));
-            %             dBeta355dP(Sel355P,j)=dBdP355;
-            %             dBeta355dR(Sel355P,j)=dBdR355;
-            %             dBeta355dLR(Sel355P,j)=dBdLR355;
-            %             C355Lidar(Sel355P,j) =CLidar355;
-            %             AlphaAer355(:,j)=BetaAer355Klett(:,j).*LR355arr(:,j);
-            %             AlphaAer355err(:,j)= abs(BetaAer355Kletterr(:,j).*LR355arr(:,j)) + abs(BetaAer355Klett(:,j).*LR355arrerr(:,j));
-            %
-            
-            
-            
-            
-            Wolkenmaske(wowolke,j) = 1;
+            Wolkenmaske(wowolke,j,1) = 1;
             
             % egal ob Wolke oder nicht - jetzt rechnen wir nochmal mit LR532wolke und
             % der Rd-beding, die ggf. gefunden wurde f?r die "fest" L?sungen
             %Warum???? --- vor allem ueber schreibt das alles.
             
-            LRfest = ones(size(LR532arr)).*LR532wolke;
-            [Beta, dBdR532, dBdLR532, dBdP532, CLidar532] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                LRfest(Sel532P,j), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
-            Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);
-            Betaaer532err(Sel532P,1)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
-            Btemp532(Sel532P)=Beta./BeRa532(Sel532P,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,1)./BeRa532(Sel532P,1);
-            BSR532Klettfest(Sel532P,j)=Btemp532(Sel532P); BSR532Klettfesterr(Sel532P,j)=Btemp532err(Sel532P);
-            BetaAer532Klettfest(Sel532P,j)=Betaaer532(Sel532P); BetaAer532Klettfesterr(Sel532P,j)=Betaaer532err(Sel532P,1);
-            
+%             LRfest = ones(size(LR532arr)).*LR532wolke;
+%             [Beta, dBdR532, dBdLR532, dBdP532, CLidar532] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
+%                 LRfest(Sel532P,j), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
+%             Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);
+%             Betaaer532err(Sel532P,1)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
+%             Btemp532(Sel532P)=Beta./BeRa532(Sel532P,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,1)./BeRa532(Sel532P,1);
+%             BSR532Klettfest(Sel532P,j)=Btemp532(Sel532P); BSR532Klettfesterr(Sel532P,j)=Btemp532err(Sel532P);
+%             BetaAer532Klettfest(Sel532P,j)=Betaaer532(Sel532P); BetaAer532Klettfesterr(Sel532P,j)=Betaaer532err(Sel532P,1);
+%             
             %macht er daraus jetzt ueberhaupt eine Matrix?
             
         end % for Zeitschritte "entries"
@@ -857,21 +828,20 @@ else
         
         %das hier muss noch angepasst werden
         
-        speichern532p=['BeRa532 AlRay532 P532Klett P532Kletterr P532roh BSRAtFit532arr LR532arr BetaAer532Klett BetaAer532Kletterr ' ...
-            'AlphaAer532 AlphaAer532err BSR532Klett BSR532Kletterr dBeta532dP  dBeta532dR dBeta532dLR Abbruch532 P532Abackground'];
+        speichern532p=['BeRa532 AlRay532'...%rayleigh profile for molcular scattering
+            ' P532roh P532Klett P532Klettnoise'... %rohsignal, range korrigiertes signal, Noise
+            ' BSRAtFit532arr LR532arr'... %Annahme untere Randbedingung (7.5-107.5m) Annahmen fuer Lidarratio
+            ' BetaAer532Klett BetaAer532Kletterr' ... %aerosol (and cloud) backscatter, basically non-molecular backscatter and its maximum error -namenvergessen-Fehlerfortpflanzung
+            ' AlphaAer532 AlphaAer532err'...aerosol (and cloud) attenuation            % ' BSR532Klett BSR532Kletterr'... backscatter ratio (total backscatter / molcular backscatter  - unnoetig weil wir ja die einzelnen Komponenten davon speichern
+            ' dBeta532dP  dBeta532dR dBeta532dLR'... %veraenderung von beta pro 1 veraenderung P (z.b. durch Rauschen), oder Randbedingung oder LR 
+            ' Abbruch532 P532Abackground']; %die Fehler variable, falls z.B. unterm Flugzeug eine Wolke ist oder es nicht konvergiert, die Hintergrundkorrektur, die wir abgekogen haben
         
-        speichern532s=['P532SKlett P532SKletterr P532Sroh']
+        speichern532s=['P532Sroh P532SKlett P532SKlettnoise'];
         
-        %         speichern532s=['P532SKlett P532SKletterr P532Sroh BSRAtFit532Sarr LR532Sarr BetaAer532SKlett BetaAer532SKletterr ' ...
-        %             'AlphaAer532S AlphaAer532Serr BSR532SKlett BSR532SKletterr BSR532SKlettfest BSR532SKlettfesterr BetaAer532SKlettfest ' ...
-        %             'BetaAer532SKlettfesterr dBeta532SdP  dBeta532SdR dBeta532SdLR Abbruch532S P532SAbackground BetaAer532SKlettausP BSR532SKlettausP'];
-        %
-        %
-        %         speichern355p=['P355Klett P355Kletterr P355roh BSRAtFit355arr  LR355arr BetaAer355Klett BetaAer355Kletterr ' ...
-        %             'AlphaAer355 AlphaAer355err BSR355Klett BSR355Kletterr BSR355Klettfest BSR355Klettfesterr BetaAer355Klettfest ' ...
-        %             'BetaAer355Klettfesterr dBeta355dP  dBeta355dR dBeta355dLR Abbruch355 P355Abackground'];
-        %
-        sonstiges = [' H matlabzeit Wolkenmaske FitRangearr BSR532sollarr BSR355sollarr BSRAtFit532start BSRAtFit355start VolDep532' ];
+        speichern355p=['BeRa355 AlRay355'...
+            ' P355roh P355Klett P355Klettnoise'];
+        
+        sonstiges = [' H matlabzeit Wolkenmaske FitRangearr BSR532sollarr BSRAtFit532start' ];
         
         
         liste=[speichern532p ' ' speichern532s ' ' speichern355p sonstiges];
