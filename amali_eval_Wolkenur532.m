@@ -332,8 +332,8 @@ else
                 BSR532Karlmedianvgl = interp1(KarlHzumBoden, BSR532KarlmedianzumBoden, H);
                 
             else
-                BSR532Karlmedianvgl =  BSR532sollnotfall;
-                
+                BSR532Karlmedianvgl =  BSR532sollnotfall; % das heist das er auch gar nicht nimmt wass eingestellt ist :/
+                BSR532Karlmedianvgl = repelem(BSR532soll,length(H))';
             end
         end
         
