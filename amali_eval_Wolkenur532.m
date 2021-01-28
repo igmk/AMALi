@@ -332,7 +332,7 @@ else
                 BSR532Karlmedianvgl = interp1(KarlHzumBoden, BSR532KarlmedianzumBoden, H);
                 
             else
-                BSR532Karlmedianvgl =  BSR532sollnotfall; % das heist das er auch gar nicht nimmt wass eingestellt ist :/
+                
                 BSR532Karlmedianvgl = repelem(BSR532soll,length(H))';
             end
         end
@@ -358,7 +358,7 @@ else
         %Vergleich Bodensignal???
         % Porblem besteht nur fuer counting signal ----
         
-        %auch nur counting signal -- also egal
+        %auch nur counting signal -- also hier ertmal egal
         %wo = find(data532c > 3.2e4);
         %data532creserve=data532c;
         %data532c(wo)=NaN;
@@ -510,6 +510,17 @@ else
         teiler=floor(ende./20);
         
         
+        %schleife ?ber Lidar ratios
+        for LR=1:3
+            if LR ==1 
+                LR532arr(:,:,LR)=ones(size(P532Klett)).*LR532wolke;
+            elseif LR ==2
+                LR532arr(:,:,LR)=ones(size(P532Klett)).*LR532wolke2;
+            elseif LR ==3
+                 LR532arr(:,:,LR)=ones(size(P532Klett)).*LR532wolke3;
+            else 
+                'number of LR not correct'
+            end
         
         % Hier geht es los: die gro?e Schleife ueber alle Zeitschritte
         %
@@ -604,14 +615,14 @@ else
                 BSRAtFiterr = BSRAtFit532arr(j) ./ 5; %warum wird hier durch 5 geteilt ????  irgendwas fuer fehlerabschaetzung
                 
                 [Beta, dBdR532, dBdLR532, dBdP532, CLidar] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                    LR532arr(Sel532P,j), AlRay532(Sel532P,1), BeRa532(Sel532P,1)); %#ok<ASGLU>
+                    LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1)); %#ok<ASGLU>
                 Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);
                 Betaaer532err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
                 Btemp532(Sel532P)=Beta./BeRa532(Sel532P,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532P,1);
                 tmp=mymean(Btemp532(Sel532P(clearint)));
                 
                 [Beta2, ~, ~, ~, ~] = klettinv_ableit4( BSRAtFit532arr(j)+1, FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                    LR532arr(Sel532P,j), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
+                    LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
                 BetaAer532_2(Sel532P)=Beta2-BeRa532(Sel532P,1);
                 %BetaAer532_2err(Sel532P,j)=abs(dBdR5322.*BSRAtFiterr)+abs(dBdLR5322.*LR532arrerr(Sel532P,j))+abs(dBdP5322.*P532Kletterr(Sel532P,j));
                 Btemp532_2(Sel532P)=Beta2./BeRa532(Sel532P,1); %Btemp532_2err(Sel532P)=BetaAer532_2err(Sel532P,j)./BeRa532(Sel532P,1);
@@ -664,7 +675,7 @@ else
             
             woaerosol = find(Btemp532 < Wolkenschwelle532);
             wowolke = find(Btemp532 > Wolkenschwelle532);
-            LR532arr(woaerosol,j) = LR532aerosol;
+            LR532arr(woaerosol,j,LR) = LR532aerosol;
             %LR532Sarr(woaerosol,j) = LR532Saerosol;
             %LR355arr(woaerosol,j) = LR355aerosol;
             
@@ -702,7 +713,7 @@ else
                 
                 BSRAtFiterr = BSRAtFit532arr(j) ./ 5;
                 [Beta, dBdR532, dBdLR532, dBdP532, CLidar532] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                    LR532arr(Sel532P,j), AlRay532(Sel532P,1), BeRa532(Sel532P,1)); %#ok<ASGLU>
+                    LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1)); %#ok<ASGLU>
                 
                 Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);% nur der Aersosol anteil der Rueckstreuung, molekularer Anteil abgezogen
                 
@@ -716,7 +727,7 @@ else
                 q=BSRAtFit532arr(j)+0.2; %LBC veraendern
                 
                 [Beta2, ~, ~, ~, ~] = klettinv_ableit4( q, FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                    LR532arr(Sel532P,j), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
+                    LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
                 BetaAer532_2(Sel532P)=Beta2-BeRa532(Sel532P,1);
                 %fuer den Vergleich brauchen wir keine Fehlerabschaetzung
                 %BetaAer532_2err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
@@ -774,27 +785,27 @@ else
             
             
             %backscatterratio (beta total / beta mol)
-            BSR532Klett(Sel532P,j,1)=Btemp532(Sel532P);
-            BSR532Kletterr(Sel532P,j,1)=Btemp532err(Sel532P);
+            BSR532Klett(Sel532P,j,LR)=Btemp532(Sel532P);
+            BSR532Kletterr(Sel532P,j,LR)=Btemp532err(Sel532P);
             
             %backscatter (mit oder ohne molekularem Anteil??? )
-            BetaAer532Klett(Sel532P,j,1)=Betaaer532(Sel532P);
-            BetaAer532Kletterr(Sel532P,j,1)=Betaaer532err(Sel532P,j);
+            BetaAer532Klett(Sel532P,j,LR)=Betaaer532(Sel532P);
+            BetaAer532Kletterr(Sel532P,j,LR)=Betaaer532err(Sel532P,j);
             %attenuated backscatter
-            attenu532P(Sel532P,j,1) = P532Klett(Sel532P,j).*H(Sel532P).^2 ./ CLidar532(Sel532P(1));
+            attenu532P(Sel532P,j,LR) = P532Klett(Sel532P,j).*H(Sel532P).^2 ./ CLidar532(Sel532P(1));
             % Fehlerquelle im attenuated backscatter ist nur das Rauschen und ein fehler in der Annahme der oberen randbedingung
-            attenu532Perr(Sel532P,j,1) = abs(P532Klettnoise(Sel532P,j).*H(Sel532P).^2 ./ CLidar532(Sel532P(1))) + abs(attenu532P(Sel532P,j) ./ CLidar532(Sel532P(1)).*0.1.*CLidar532(Sel532P(1)));
-            dBeta532dP(Sel532P,j,1)=dBdP532; %Fehler durch Rauschen
-            dBeta532dR(Sel532P,j,1)=dBdR532; %Fehler durch untere Randbedingung
-            dBeta532dLR(Sel532P,j,1)=dBdLR532; %Fehler durch falsches LR
+            attenu532Perr(Sel532P,j,LR) = abs(P532Klettnoise(Sel532P,j).*H(Sel532P).^2 ./ CLidar532(Sel532P(1))) + abs(attenu532P(Sel532P,j) ./ CLidar532(Sel532P(1)).*0.1.*CLidar532(Sel532P(1)));
+            dBeta532dP(Sel532P,j,LR)=dBdP532; %Fehler durch Rauschen
+            dBeta532dR(Sel532P,j,LR)=dBdR532; %Fehler durch untere Randbedingung
+            dBeta532dLR(Sel532P,j,LR)=dBdLR532; %Fehler durch falsches LR
             %Fehler durch falsche obere Randbedingung ist linaer. wenn oben
             %10% mehr sind dann muesste das attenuated backscatter profil
             %komplett 10% mehr sein
-            C532Lidar(Sel532P,j,1) =CLidar532; % LIdarkonstante, sollte theoretisch f?r alle drei LR gleich sein (Signal(rangekorrigiert und hintergrundbereinigt)*Lidarkonstante=attenuated backscatter. - guter sanity check
+            C532Lidar(Sel532P,j,LR) =CLidar532; % LIdarkonstante, sollte theoretisch f?r alle drei LR gleich sein (Signal(rangekorrigiert und hintergrundbereinigt)*Lidarkonstante=attenuated backscatter. - guter sanity check
             %attenuation
-            AlphaAer532(:,j,1)=BetaAer532Klett(:,j).*LR532arr(:,j);
+            AlphaAer532(:,j,LR)=BetaAer532Klett(:,j,LR).*LR532arr(:,j,LR);
             %attenuation ist Backscatter (beta)*LR
-            AlphaAer532err(:,j,1)= abs(BetaAer532Kletterr(:,j).*LR532arr(:,j)) + abs(BetaAer532Klett(:,j).*LR532arrerr(:,j));
+            AlphaAer532err(:,j,LR)= abs(BetaAer532Kletterr(:,j).*LR532arr(:,j,LR)) + abs(BetaAer532Klett(:,j).*LR532arrerr(:,j));
             
             
             
@@ -861,7 +872,7 @@ else
             %macht er daraus jetzt ueberhaupt eine Matrix?
             
         end % for Zeitschritte "entries"
-        
+        end % for LR     
         
         
         
