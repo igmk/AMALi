@@ -80,8 +80,8 @@ Wvl355 =3.5471e-7;
 % the smaller the droplets the larger the LR (fig. 3 in O'Connor 2004)
 LR532aerosol=23; %(clean marine air KIM 2018)
 LR532wolke=15; %(Hogan 2003 LR for Liquid with effective radii 2-5mym) % YORKS 2011 8-60 eher 11 for low stratiform water clouds, 17 for higher water clouds)
-LR532wolke2=23 %#ok<NASGU> % as clean air, not sensitive to wrong assumption in cloud mask, in the range of realistic cloud LR
-LR532wolke3= 27 %#ok<NASGU> %(LAMPERT 2009 for thin ice cloud in Arctic)
+LR532wolke2=23 % as clean air, not sensitive to wrong assumption in cloud mask, in the range of realistic cloud LR
+LR532wolke3= 27 %(LAMPERT 2009 for thin ice cloud in Arctic)
 
 LRerr = 2; % angenommener Fehler im LR %fuer das ausrechnen von dbeta
 
@@ -262,20 +262,20 @@ NBeRa532 = exp(tmp);
 
 
 % Fuer alte Datenstruktur: datum=[DatStr '/'];
-%aus unerfindlichen gruenden haben die neuen matlabfiles keine nullen vor dem Monat    
-    
-    if strcmp(campaign, 'ACLOUD')
-        datum=[DatStr '/'] %#ok<*NOPRT>
-    else
-        datum=[DatStr(1:2), DatStr(4:6)];
-    end
-    suchfile=[amalidatendir datum '*.mat'];
-    
-    files=findfile(suchfile)
-    NofFiles = length(files(:,1));
-    if NofFiles >1
-        disp('mehr als einen Datensatz gefunden, alles wird durchiteriert')
-    end
+%aus unerfindlichen gruenden haben die neuen matlabfiles keine nullen vor dem Monat
+
+if strcmp(campaign, 'ACLOUD')
+    datum=[DatStr '/'] %#ok<*NOPRT>
+else
+    datum=[DatStr(1:2), DatStr(4:6)];
+end
+suchfile=[amalidatendir datum '*.mat'];
+
+files=findfile(suchfile)
+NofFiles = length(files(:,1));
+if NofFiles >1
+    disp('mehr als einen Datensatz gefunden, alles wird durchiteriert')
+end
 
 
 if isempty(files)
@@ -464,8 +464,8 @@ else
         dimen=size(P532Klett);
         
         % f?r 532P
-        LR532arr=ones(size(P532Klett)).*LR532wolke;    % es geht ja um Wolken
-        LR532arrerr=ones(size(P532Klett)).*LRerr;
+        LR532arr=ones([size(P532Klett),3]).*LR532wolke;    % es geht ja um Wolken
+        LR532arrerr=ones([size(P532Klett),3]).*LRerr;
         BSRAtFit532arr=ones(entries,1).* BSRAtFit532start;
         Btemp532=zeros(LH,1); Btemp532_2=zeros(LH,1);    Btemp532err=Btemp532;
         Betaaer532=zeros(LH,1); Betaaer532err=Btemp532;  BetaAer532_2=zeros(LH,1);
@@ -474,14 +474,14 @@ else
         dBeta532dLR=zeros(size(P532Klett));
         dBeta532dR=zeros(size(P532Klett));
         dBeta532dP=zeros(size(P532Klett));
-        BSR532Klett=zeros(size(P532Klett)); BSR532Kletterr=zeros(size(P532Klett));
+        BSR532Klett=zeros([size(P532Klett),3]); BSR532Kletterr=zeros(size(P532Klett));
         %BSR532Klettfest=zeros(size(P532Klett)); BSR532Klettfesterr=zeros(size(P532Klett));
-        C532Lidar=zeros(size(P532Klett));
-        AlphaAer532= zeros(size(P532Klett));
-        AlphaAer532err= zeros(size(P532Klett));
-        attenu532P= zeros(size(P532Klett));       attenu532Perr= zeros(size(P532Klett));
-        Abbruch532 = zeros(dimen(2),1);
-        BSR532sollarr = zeros(dimen(2),1);
+        C532Lidar=zeros([size(P532Klett),3]);
+        AlphaAer532= zeros([size(P532Klett),3]);
+        AlphaAer532err= zeros([size(P532Klett),3]);
+        attenu532P= zeros([size(P532Klett),3]);       attenu532Perr= zeros(size(P532Klett));
+        Abbruch532 = zeros(dimen(2),3);
+        BSR532sollarr = zeros(dimen(2),3);
         % Abbruch532 gibt Abbruchkriterium an:
         % 0:hat gar nicht LR angepa?t
         % 1: normale Konvergenz
@@ -512,367 +512,350 @@ else
         
         %schleife ?ber Lidar ratios
         for LR=1:3
-            if LR ==1 
+            if LR ==1
                 LR532arr(:,:,LR)=ones(size(P532Klett)).*LR532wolke;
             elseif LR ==2
                 LR532arr(:,:,LR)=ones(size(P532Klett)).*LR532wolke2;
             elseif LR ==3
-                 LR532arr(:,:,LR)=ones(size(P532Klett)).*LR532wolke3;
-            else 
+                LR532arr(:,:,LR)=ones(size(P532Klett)).*LR532wolke3;
+            else
                 'number of LR not correct'
             end
-        
-        % Hier geht es los: die gro?e Schleife ueber alle Zeitschritte
-        %
-        %
-        
-        for j=start:ende   %1:entries    %2000:5000  start:ende
             
-            if (mod(j,teiler)) ==0, disp(['Profile: ' num2str(j) ' von ' num2str(ende)]), end
-            if j ==5000
-                q=1;%#ok<NASGU> %???
-            end
-            
-            
-            % Definitionen innerhalb eines Zeitschrittes
-            Psoll532=Ptheo532 ./Ptheo532(UeberlappEndeposi).*P532Klett(UeberlappEndeposi,j); % ???  ich hab keinen Schimmer was hier passiert
-            %Psoll532S=Ptheo532S ./Ptheo532S(UeberlappEndeposi).*P532SKlett(UeberlappEndeposi,j);
-            %Psoll355=Ptheo355 ./Ptheo355(UeberlappEndeposi).*P355Klett(UeberlappEndeposi,j);
-            ichmerkmirkomischepositionen = 0; %#ok<NASGU>
-            
-            
-            
-            % also da wo
-            % "select" die guten H?henbins, in denen gerechnet werden soll.
-            %
-            Sel532P = connrnge( H >= 0 & H <= Hcalcrange & ...
-                P532Klett(:,j) > 0 & ...
-                Density(:,1) > 0, 1);
-            if length(Sel532P) > 1
-                Sel532P = (Sel532P(1):Sel532P(2));
-            else
-                Sel532P = [];
-            end
-            
-            %             % "select" die guten H?henbins, in denen gerechnet werden soll.
-            %             %
-            %             Sel532S = connrnge( H >= 0 & H <= Hcalcrange & ...
-            %                 P532SKlett(:,j) > 0 & ...
-            %                 Density(:,1) > 0, 1);
-            %             if length(Sel532S) > 1
-            %                 Sel532S = (Sel532S(1):Sel532S(2));
-            %             else
-            %                 Sel532S = [];
-            %             end
+            % Hier geht es los: die gro?e Schleife ueber alle Zeitschritte
             %
             %
-            %             % "select" die guten H?henbins, in denen gerechnet werden soll.
-            %             %
-            %             Sel355P = connrnge( H >= 0 & H <= Hcalcrange & ...
-            %                 P355Klett(:,j) > 0 & ...
-            %                 Density(:,1) > 0, 1);
-            %             if length(Sel355P) > 1
-            %                 Sel355P = (Sel355P(1):Sel355P(2));
-            %             else
-            %                 Sel355P = [];
-            %             end
-            %
             
-            
-            
-            
-            
-            
-            %set range gates for lower boundary condition
-            [~,posi]=min(abs(matlabzeit(j)-flugzeit));
-            hwo2=flughoehe(posi)-7.5;
-            hwo1=flughoehe(posi)-107.5;
-            FitRangearr(1,j)=hwo1; FitRangearr(2,j)=hwo2;
-            
-            
-            
-            
-            % wir rechnen je ein erstes Mal, nur um zu sehen, wo Wolken sind
-            % wenn FitRangearr(:,j) ungefaehr gleich Hcalcrange, dann ist das
-            % Lidarsignal durch die Wolke durchgekommen, also ist die Wolke d?nn und
-            % damit hat BSRAtFit einen Einflu?. Dann k?nnte Beta zu klein werden
-            % wir iterieren BSRAtFit532arr(j) bis Beta nicht mehr offensichtlich zu
-            % klein ist und benutzen median(btemp) > 1.05 als Abbruchkriterium
-            % Sinn: eine Wolkenmaske zu erstellen
-            
-            
-            % 532P
-            condi=1; iter=0; itmax=600;
-            hz532=0;
-            
-            %finde den Berreich als 'clear '
-            [VoI,BiI]= minintsuche(abs(Psoll532(Sel532P(40:200))-P532Klett(Sel532P(40:200),j)),40);
-            clearint=VoI:BiI;
-            while condi
-                iter = iter+1;
-                if iter > itmax, condi = 0; end
+            for j=start:ende   %1:entries    %2000:5000  start:ende
                 
-                BSRAtFiterr = BSRAtFit532arr(j) ./ 5; %warum wird hier durch 5 geteilt ????  irgendwas fuer fehlerabschaetzung
-                
-                [Beta, dBdR532, dBdLR532, dBdP532, CLidar] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                    LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1)); %#ok<ASGLU>
-                Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);
-                Betaaer532err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
-                Btemp532(Sel532P)=Beta./BeRa532(Sel532P,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532P,1);
-                tmp=mymean(Btemp532(Sel532P(clearint)));
-                
-                [Beta2, ~, ~, ~, ~] = klettinv_ableit4( BSRAtFit532arr(j)+1, FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                    LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
-                BetaAer532_2(Sel532P)=Beta2-BeRa532(Sel532P,1);
-                %BetaAer532_2err(Sel532P,j)=abs(dBdR5322.*BSRAtFiterr)+abs(dBdLR5322.*LR532arrerr(Sel532P,j))+abs(dBdP5322.*P532Kletterr(Sel532P,j));
-                Btemp532_2(Sel532P)=Beta2./BeRa532(Sel532P,1); %Btemp532_2err(Sel532P)=BetaAer532_2err(Sel532P,j)./BeRa532(Sel532P,1);
-                tmp2=mymean(Btemp532_2(Sel532P(clearint)));
-                
-                deltasoll = BSR532mintrust - tmp;
-                deltab=(tmp2-tmp);
-                
-                %Zum plotten der zwischenschritte
-                %                 BetaKlett1(:,iter,j)= Beta;
-                %                 LBCKlett1(:,j)=BSRAtFit532arr(j);
-                %                 UBCKlett1(:,iter,j)=  Btemp532;
-                %                 CKlett1(:,iter,j)=CLidar;
-                %                 clearKlett1(:,iter,j)=clearint;
-                %                 HKlett1(:,j)=H(Sel532P);
-                
-                if abs(deltasoll) > 0.01
-                    %w=(BSR532sollarr(j) - tmp) ./ deltab;
-                    BSRAtFit532arr(j) = BSRAtFit532arr(j) +1./deltab.*deltasoll;
-                    if BSRAtFit532arr(j) > 1e6, hz532=hz532+1; BSRAtFit532arr(j) =1e6; end
-                else
-                    condi=0;
-                    Abbruch532(j)= Abbruch532(j)+100;%disp('bringt nichts mehr'),
+                if (mod(j,teiler)) ==0, disp(['Profile: ' num2str(j) ' von ' num2str(ende)]), end
+                if j ==5000
+                    q=1;%#ok<NASGU> %???
                 end
-                diffi = abs(tmp - BSR532mintrust);
-                if abs(diffi) < diffisoll, condi=0;  end  % normales Ende
-                if hz532 >hzlim, condi = 0;
-                    Abbruch532(j)=Abbruch532(j)+200
-                end   % Rdbeding. irrelevant
-                
-                % deltab
-                % qq=BSRAtFit532arr(j)
-            end % 1. while
-            
-            
-            if tmp < (BSR532mintrust-diffisoll)  % noetig falls iter > itmax.
-                Btemp532=Btemp532./tmp.*BSR532mintrust;
-                %gesamtes Profil wird skaliert das UBC mindestens der dem
-                %mintrust entspricht
-            end
-            %wo532= find(Btemp532 < Wolkenschwelle532 );    %& H< hwo1);
-            
-            
-            
-            % alleaeroposi=sort(cat(1,wo532,wo532S,wo355));
-            % da=diff(alleaeroposi);
-            % da2=find(da >0);
-            % woaerosol=[1, alleaeroposi(da2+1)];
-            % stimmt das? Wir brauchen es nicht
-            
-            woaerosol = find(Btemp532 < Wolkenschwelle532);
-            wowolke = find(Btemp532 > Wolkenschwelle532);
-            LR532arr(woaerosol,j,LR) = LR532aerosol;
-            %LR532Sarr(woaerosol,j) = LR532Saerosol;
-            %LR355arr(woaerosol,j) = LR355aerosol;
-            
-            guteaeroposi= connrnge(H>  UeberlappEnde & H < hwo1 & Btemp532 < Wolkenschwelle532); % das sucht den laengsten zusammenhaengenden Bereich ohne Wolken
-            if length(guteaeroposi) > 1
-                guteaeroposi = (guteaeroposi(1):guteaeroposi(2));%geeingnete position fuer vergleich (kontrollrange fuer BSR355soll
-            else
-                guteaeroposi = 20:40;  % irgendwelche Positionen dicht unter Flugzeug
-                %ichmerkmirkomischepositionen = 1;
-                Abbruch532 = Abbruch532+10
-            end
-            
-            
-            % wir glauben, dass die Wolkenmaske und damit die Verteilung, an welchen
-            % Positionen das LR f?r Aerosol oder Wolken gesetzt wurde, "richtig genug
-            % ist" um die eigentliche Rechnung durchzuf?hren. Wir iterireren jetzt (mit
-            % dem hoffentlich richtigem LR f?r Aerosol die Randbedingung so lange, bis
-            % die L?sung f?r den Fall "keine dicke Wolke" stimmt.
-            
-            
-            BSR532haben = mymedian(Btemp532(guteaeroposi));      %#ok<NASGU> % war mean  %% benutzt er das spaeter ueberhaupt noch?
-            BSR532sollarr(j)=mymedian(BSR532Karlmedianvgl(guteaeroposi)); %BSRsoll ist jetzt das ziel fuer die upper boundary condition
-            if BSR532sollarr(j) < BSR532mintrust-diffisoll  || ~isfinite(BSR532sollarr(j))
-                BSR532sollarr(j) = BSR532sollnotfall;
-                Abbruch532(j) = Abbruch532(j)+0.3; %????????????????????????????????????????????????
-            end
-            
-            
-            
-            condi=1; iter=0; itmax=500;
-            controllBSRWert=zeros(itmax,1);
-            while condi
-                iter=iter+1;
-                if iter >= itmax, condi=0; disp('keine Konvergenz gefunden 532P');  j, end
-                
-                BSRAtFiterr = BSRAtFit532arr(j) ./ 5;
-                [Beta, dBdR532, dBdLR532, dBdP532, CLidar532] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                    LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1)); %#ok<ASGLU>
-                
-                Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);% nur der Aersosol anteil der Rueckstreuung, molekularer Anteil abgezogen
-                
-                Betaaer532err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));%Summe aller moeglichen Fehlerquellen
-                
-                %Fehler in BSR umgerechnet (warum auch immer)
-                Btemp532(Sel532P)=Beta./BeRa532(Sel532P,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532P,1);
-                
-                BSR532haben = mymedian(Btemp532(guteaeroposi)); % war mymean % mittlerer Wert in UBC die dann mit mittlerem Wert mit veraenderter LBC verglichen wird
-                
-                q=BSRAtFit532arr(j)+0.2; %LBC veraendern
-                
-                [Beta2, ~, ~, ~, ~] = klettinv_ableit4( q, FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                    LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
-                BetaAer532_2(Sel532P)=Beta2-BeRa532(Sel532P,1);
-                %fuer den Vergleich brauchen wir keine Fehlerabschaetzung
-                %BetaAer532_2err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
-                Btemp532_2(Sel532P)=Beta2./BeRa532(Sel532P,1); %Btemp532_2err(Sel532P)=BetaAer532_2err(Sel532P,j)./BeRa532(Sel532P,1);
-                
-                BSR532haben2 = mymedian(Btemp532_2(guteaeroposi));   % war mean
-                %vergleich
-                deltab=(BSR532haben2-BSR532haben);
-                
-                %das ist damit man die zwischenwerte der iterationen
-                %plotten kann - eigentlich nicht wichtig
-                %                 BetaKlett2(:,iter,j)= Beta;
-                %                 LBCKlett2(:,j)=BSRAtFit532arr(j);
-                %                 UBCKlett2(:,iter,j)=  Btemp532;
-                %                 LRKlett2(:,iter,j)= LR532arr(Sel532P,j);
-                %                 CKlett2(:,iter,j)=CLidar532;
-                %                 clearKlett2(guteaeroposi,iter,j)= 1;
-                
-                HKlett2(:,j)=H(Sel532P); %#ok<NASGU>
                 
                 
-                if abs(deltab) > 0.01 %wenn sich noch was veraendert hat
-                    w=(BSR532sollarr(j) - BSR532haben) ./ deltab;
-                    BSRAtFit532arr(j) = BSRAtFit532arr(j) + w.*0.2;
+                % Definitionen innerhalb eines Zeitschrittes
+                Psoll532=Ptheo532 ./Ptheo532(UeberlappEndeposi).*P532Klett(UeberlappEndeposi,j); % ???  ich hab keinen Schimmer was hier passiert
+                %Psoll532S=Ptheo532S ./Ptheo532S(UeberlappEndeposi).*P532SKlett(UeberlappEndeposi,j);
+                %Psoll355=Ptheo355 ./Ptheo355(UeberlappEndeposi).*P355Klett(UeberlappEndeposi,j);
+                ichmerkmirkomischepositionen = 0; %#ok<NASGU>
+                
+                
+                
+                % also da wo
+                % "select" die guten H?henbins, in denen gerechnet werden soll.
+                %
+                Sel532P = connrnge( H >= 0 & H <= Hcalcrange & ...
+                    P532Klett(:,j) > 0 & ...
+                    Density(:,1) > 0, 1);
+                if length(Sel532P) > 1
+                    Sel532P = (Sel532P(1):Sel532P(2));
                 else
-                    condi=0; %disp('bringt nichts mehr'),
+                    Sel532P = [];
                 end
-                diffi = abs(BSR532haben - BSR532sollarr(j));
                 
-                if abs(diffi) < diffisoll, condi=0;  end  % normales Ende
+                %             % "select" die guten H?henbins, in denen gerechnet werden soll.
+                %             %
+                %             Sel532S = connrnge( H >= 0 & H <= Hcalcrange & ...
+                %                 P532SKlett(:,j) > 0 & ...
+                %                 Density(:,1) > 0, 1);
+                %             if length(Sel532S) > 1
+                %                 Sel532S = (Sel532S(1):Sel532S(2));
+                %             else
+                %                 Sel532S = [];
+                %             end
+                %
+                %
+                %             % "select" die guten H?henbins, in denen gerechnet werden soll.
+                %             %
+                %             Sel355P = connrnge( H >= 0 & H <= Hcalcrange & ...
+                %                 P355Klett(:,j) > 0 & ...
+                %                 Density(:,1) > 0, 1);
+                %             if length(Sel355P) > 1
+                %                 Sel355P = (Sel355P(1):Sel355P(2));
+                %             else
+                %                 Sel355P = [];
+                %             end
+                %
                 
-                controllBSRWert(iter) =  BSR532haben;
-            end % while f?r die Randbedingung
-            
-            %sporadisch kommen zu niedrige Rd-bedingungen vor, weil vermutlich die
-            %LR total falsch sind. Dies wird hier abgefangen: (gefunden bei 532S)
-            if BSRAtFit532arr(j) < BSR532mintrust -diffisoll
-                BSRAtFit532arr(j) = BSR532mintrust;
-                Abbruch532(j) = Abbruch532(j)+20;
-            end
-            
-            
-            % Fehlt hier der Schritt wo er das LR fuer die Luft anpasst???
-            
-            
-            %LR variation hier rausgeloescht
-            
-            
-            %matrizen werden zusammengesetzt
-            %dritte Dimension 1 - 1.LR (theoretisches wasser), 2 -LR wie
-            %Aerosol, 3 LR wie Eis in LAMPERT
-            
-            %molekulare anteil
-            %BeRa532(Sel532P,1); % da das aus den monatsmitteln der Radiosonden kommt sollte das fuer jeden Flug gleich sein
-            
-            
-            %backscatterratio (beta total / beta mol)
-            BSR532Klett(Sel532P,j,LR)=Btemp532(Sel532P);
-            BSR532Kletterr(Sel532P,j,LR)=Btemp532err(Sel532P);
-            
-            %backscatter (mit oder ohne molekularem Anteil??? )
-            BetaAer532Klett(Sel532P,j,LR)=Betaaer532(Sel532P);
-            BetaAer532Kletterr(Sel532P,j,LR)=Betaaer532err(Sel532P,j);
-            %attenuated backscatter
-            attenu532P(Sel532P,j,LR) = P532Klett(Sel532P,j).*H(Sel532P).^2 ./ CLidar532(Sel532P(1));
-            % Fehlerquelle im attenuated backscatter ist nur das Rauschen und ein fehler in der Annahme der oberen randbedingung
-            attenu532Perr(Sel532P,j,LR) = abs(P532Klettnoise(Sel532P,j).*H(Sel532P).^2 ./ CLidar532(Sel532P(1))) + abs(attenu532P(Sel532P,j) ./ CLidar532(Sel532P(1)).*0.1.*CLidar532(Sel532P(1)));
-            dBeta532dP(Sel532P,j,LR)=dBdP532; %Fehler durch Rauschen
-            dBeta532dR(Sel532P,j,LR)=dBdR532; %Fehler durch untere Randbedingung
-            dBeta532dLR(Sel532P,j,LR)=dBdLR532; %Fehler durch falsches LR
-            %Fehler durch falsche obere Randbedingung ist linaer. wenn oben
-            %10% mehr sind dann muesste das attenuated backscatter profil
-            %komplett 10% mehr sein
-            C532Lidar(Sel532P,j,LR) =CLidar532; % LIdarkonstante, sollte theoretisch f?r alle drei LR gleich sein (Signal(rangekorrigiert und hintergrundbereinigt)*Lidarkonstante=attenuated backscatter. - guter sanity check
-            %attenuation
-            AlphaAer532(:,j,LR)=BetaAer532Klett(:,j,LR).*LR532arr(:,j,LR);
-            %attenuation ist Backscatter (beta)*LR
-            AlphaAer532err(:,j,LR)= abs(BetaAer532Kletterr(:,j).*LR532arr(:,j,LR)) + abs(BetaAer532Klett(:,j).*LR532arrerr(:,j));
-            
-            
-            
-            
-            
-            % finales Abspeichern: ----------------------------------------
-            
-            %matrizen werden zusammengesetzt
-            BSR532Klett(Sel532P,j)=Btemp532(Sel532P); BSR532Kletterr(Sel532P,j)=Btemp532err(Sel532P);
-            BetaAer532Klett(Sel532P,j)=Betaaer532(Sel532P); BetaAer532Kletterr(Sel532P,j)=Betaaer532err(Sel532P,j);
-            attenu532P(Sel532P,j) = P532Klett(Sel532P,j).*H(Sel532P).^2 ./ CLidar532(Sel532P(1));
-            attenu532Perr(Sel532P,j) = abs(P532Klettnoise(Sel532P,j).*H(Sel532P).^2 ./ CLidar532(Sel532P(1))) + abs(attenu532P(Sel532P,j) ./ CLidar532(Sel532P(1)).*0.1.*CLidar532(Sel532P(1)));
-            dBeta532dP(Sel532P,j)=dBdP532;
-            dBeta532dR(Sel532P,j)=dBdR532;
-            dBeta532dLR(Sel532P,j)=dBdLR532;
-            C532Lidar(Sel532P,j) =CLidar532;
-            AlphaAer532(:,j)=BetaAer532Klett(:,j).*LR532arr(:,j);
-            AlphaAer532err(:,j)= abs(BetaAer532Kletterr(:,j).*LR532arr(:,j)) + abs(BetaAer532Klett(:,j).*LR532arrerr(:,j));
-            
-            %             BSR532SKlett(Sel532S,j)=Btemp532S(Sel532S); BSR532SKletterr(Sel532S,j)=Btemp532Serr(Sel532S);
-            %             BetaAer532SKlett(Sel532S,j)=Betaaer532S(Sel532S); BetaAer532SKletterr(Sel532S,j)=Betaaer532Serr(Sel532S,j);
-            %             attenu532S(Sel532S,j) = P532SKlett(Sel532S,j).*H(Sel532S).^2 ./ CLidar532S(Sel532S(1));
-            %             attenu532Serr(Sel532S,j) = abs(P532SKlettnoise(Sel532S,j).*H(Sel532S).^2 ./ CLidar532S(Sel532S(1))) + abs(attenu532S(Sel532S,j) ./ CLidar532S(Sel532S(1)).*0.1.*CLidar532S(Sel532S(1)));
-            %             dBeta532SdP(Sel532S,j)=dBdP532S;
-            %             dBeta532SdR(Sel532S,j)=dBdR532S;
-            %             dBeta532SdLR(Sel532S,j)=dBdLR532S;
-            %             C532SLidar(Sel532S,j) =CLidar532S;
-            %             AlphaAer532S(:,j)=BetaAer532SKlett(:,j).*LR532Sarr(:,j);
-            %             AlphaAer532Serr(:,j)= abs(BetaAer532SKletterr(:,j).*LR532Sarr(:,j)) + abs(BetaAer532SKlett(:,j).*LR532Sarrerr(:,j));
-            %
-            %             BSR355Klett(Sel355P,j)=Btemp355(Sel355P); BSR355Kletterr(Sel355P,j)=Btemp355err(Sel355P);
-            %             BetaAer355Klett(Sel355P,j)=Betaaer355(Sel355P); BetaAer355Kletterr(Sel355P,j)=Betaaer355err(Sel355P,j);
-            %             attenu355P(Sel355P,j) = P355Klett(Sel355P,j).*H(Sel355P).^2 ./ CLidar355(Sel355P(1));
-            %             attenu355Perr(Sel355P,j) = abs(P355Klettnoise(Sel355P,j).*H(Sel355P).^2 ./ CLidar355(Sel355P(1))) + abs(attenu355P(Sel355P,j) ./ CLidar355(Sel355P(1)).*0.1.*CLidar355(Sel355P(1)));
-            %             dBeta355dP(Sel355P,j)=dBdP355;
-            %             dBeta355dR(Sel355P,j)=dBdR355;
-            %             dBeta355dLR(Sel355P,j)=dBdLR355;
-            %             C355Lidar(Sel355P,j) =CLidar355;
-            %             AlphaAer355(:,j)=BetaAer355Klett(:,j).*LR355arr(:,j);
-            %             AlphaAer355err(:,j)= abs(BetaAer355Kletterr(:,j).*LR355arr(:,j)) + abs(BetaAer355Klett(:,j).*LR355arrerr(:,j));
-            %
-            
-            
-            
-            
-            
-            Wolkenmaske(wowolke,j,1) = 1;
-            
-            % egal ob Wolke oder nicht - jetzt rechnen wir nochmal mit LR532wolke und
-            % der Rd-beding, die ggf. gefunden wurde f?r die "fest" L?sungen
-            %Warum???? --- vor allem ueber schreibt das alles.
-            
-            
-            %             LRfest = ones(size(LR532arr)).*LR532wolke;
-            %             [Beta, dBdR532, dBdLR532, dBdP532, CLidar532] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-            %                 LRfest(Sel532P,j), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
-            %             Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);
-            %             Betaaer532err(Sel532P,1)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
-            %             Btemp532(Sel532P)=Beta./BeRa532(Sel532P,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,1)./BeRa532(Sel532P,1);
-            %             BSR532Klettfest(Sel532P,j)=Btemp532(Sel532P); BSR532Klettfesterr(Sel532P,j)=Btemp532err(Sel532P);
-            %             BetaAer532Klettfest(Sel532P,j)=Betaaer532(Sel532P); BetaAer532Klettfesterr(Sel532P,j)=Betaaer532err(Sel532P,1);
-            %
-            
-            %macht er daraus jetzt ueberhaupt eine Matrix?
-            
-        end % for Zeitschritte "entries"
-        end % for LR     
+                
+                
+                
+                
+                
+                %set range gates for lower boundary condition
+                [~,posi]=min(abs(matlabzeit(j)-flugzeit));
+                hwo2=flughoehe(posi)-7.5;
+                hwo1=flughoehe(posi)-107.5;
+                FitRangearr(1,j)=hwo1; FitRangearr(2,j)=hwo2;
+                
+                
+                
+                
+                % wir rechnen je ein erstes Mal, nur um zu sehen, wo Wolken sind
+                % wenn FitRangearr(:,j) ungefaehr gleich Hcalcrange, dann ist das
+                % Lidarsignal durch die Wolke durchgekommen, also ist die Wolke d?nn und
+                % damit hat BSRAtFit einen Einflu?. Dann k?nnte Beta zu klein werden
+                % wir iterieren BSRAtFit532arr(j) bis Beta nicht mehr offensichtlich zu
+                % klein ist und benutzen median(btemp) > 1.05 als Abbruchkriterium
+                % Sinn: eine Wolkenmaske zu erstellen
+                
+                
+                % 532P
+                condi=1; iter=0; itmax=600;
+                hz532=0;
+                
+                %finde den Berreich als 'clear '
+                %F?r die erste iteration wird der der Bereich der UBC einfach
+                %festgenagelt und die LBC solange erh?ht bis BSR532mintrust
+                %eerreicht wird. dient einer groben scalierung um dann im
+                %n?chsten Schritt die Wolkenmaske abzuleiten
+                [VoI,BiI]= minintsuche(abs(Psoll532(Sel532P(40:200))-P532Klett(Sel532P(40:200),j)),40);
+                clearint=VoI:BiI;
+                while condi
+                    iter = iter+1;
+                    if iter > itmax, condi = 0; end
+                    
+                    BSRAtFiterr = BSRAtFit532arr(j) ./ 5; %warum wird hier durch 5 geteilt ????  irgendwas fuer fehlerabschaetzung
+                    
+                    [Beta, dBdR532, dBdLR532, dBdP532, CLidar] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
+                        LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1)); %#ok<ASGLU>
+                    Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);
+                    Betaaer532err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
+                    Btemp532(Sel532P)=Beta./BeRa532(Sel532P,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532P,1);
+                    tmp=mymean(Btemp532(Sel532P(clearint)));
+                    
+                    [Beta2, ~, ~, ~, ~] = klettinv_ableit4( BSRAtFit532arr(j)+1, FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
+                        LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
+                    BetaAer532_2(Sel532P)=Beta2-BeRa532(Sel532P,1);
+                    %BetaAer532_2err(Sel532P,j)=abs(dBdR5322.*BSRAtFiterr)+abs(dBdLR5322.*LR532arrerr(Sel532P,j))+abs(dBdP5322.*P532Kletterr(Sel532P,j));
+                    Btemp532_2(Sel532P)=Beta2./BeRa532(Sel532P,1); %Btemp532_2err(Sel532P)=BetaAer532_2err(Sel532P,j)./BeRa532(Sel532P,1);
+                    tmp2=mymean(Btemp532_2(Sel532P(clearint)));
+                    
+                    deltasoll = BSR532mintrust - tmp;
+                    deltab=(tmp2-tmp);
+                    
+                    %Zum plotten der zwischenschritte
+                    %                 BetaKlett1(:,iter,j)= Beta;
+                    %                 LBCKlett1(:,j)=BSRAtFit532arr(j);
+                    %                 UBCKlett1(:,iter,j)=  Btemp532;
+                    %                 CKlett1(:,iter,j)=CLidar;
+                    %                 clearKlett1(:,iter,j)=clearint;
+                    %                 HKlett1(:,j)=H(Sel532P);
+                    
+                    if abs(deltasoll) > 0.01 %Ziel noch nicht erreicht
+                        %w=(BSR532sollarr(j) - tmp) ./ deltab;
+                        BSRAtFit532arr(j) = BSRAtFit532arr(j) +1./deltab.*deltasoll; %Passe LBC an
+                        if BSRAtFit532arr(j) > 1e6, hz532=hz532+1; BSRAtFit532arr(j) =1e6; end %Wenn LBC super unrealistisch hoch setze es wieder auf einen Wert der halbwegs realistisch ist (Daamit es nicht ausversehen irgendwhin eskaliert
+                    else %Ziel erreicht
+                        condi=0; %gehe aus der while schleife
+                        %Abbruch532(j,LR)= Abbruch532(j,LR)+100;%disp('bringt nichts mehr'),
+                    end
+                    diffi = abs(tmp - BSR532mintrust);
+                    if abs(diffi) < diffisoll, condi=0;  end  % normales Ende
+                    
+                    
+                    
+                    if hz532 >hzlim, condi = 0;
+                        Abbruch532(j,LR)=Abbruch532(j,LR)+200; % es konvergiert nicht und landet immer bei zu hohen werten (1. Ansatz) --> Ermacht dann aber trotzdem weiter.
+                    end   % Rdbeding. irrelevant
+                    
+                    if iter==itmax
+                        Abbruch532(j,LR)=Abbruch532(j,LR)+100; %es konvergiert nicht (1. Ansatz) 
+                    end
+                    
+                    % deltab
+                    % qq=BSRAtFit532arr(j)
+                end % 1. while
+                
+                
+                if tmp < (BSR532mintrust-diffisoll)  % noetig falls iter > itmax. und er oben nicht auf ein ordentliches BSR gekommen ist
+                    Btemp532=Btemp532./tmp.*BSR532mintrust;
+                    %gesamtes Profil wird skaliert das UBC mindestens der dem
+                    %mintrust entspricht
+                end
+                %wo532= find(Btemp532 < Wolkenschwelle532 );    %& H< hwo1);
+                
+
+                % alleaeroposi=sort(cat(1,wo532,wo532S,wo355));
+                % da=diff(alleaeroposi);
+                % da2=find(da >0);
+                % woaerosol=[1, alleaeroposi(da2+1)];
+                % stimmt das? Wir brauchen es nicht
+                
+                %Hier wird geguckt wo nur klare Luft ist und das LR f?r
+                %klare Luft eingesetzt
+                woaerosol = find(Btemp532 < Wolkenschwelle532);
+                wowolke = find(Btemp532 > Wolkenschwelle532);
+                LR532arr(woaerosol,j,LR) = LR532aerosol;
+                %LR532Sarr(woaerosol,j) = LR532Saerosol;
+                %LR355arr(woaerosol,j) = LR355aerosol;
+                
+                guteaeroposi= connrnge(H>  UeberlappEnde & H < hwo1 & Btemp532 < Wolkenschwelle532); % das sucht die zusammenhaengenden Bereiche ohne Wolken
+                if length(guteaeroposi) > 1
+                    guteaeroposi = (guteaeroposi(1):guteaeroposi(2));%geeingnete position fuer vergleich (kontrollrange fuer BSR355soll
+                else
+                    guteaeroposi = floor(UeberlappEnde/7.5 ):40;  % irgendwelche Positionen dicht unter Flugzeug
+                    %ichmerkmirkomischepositionen = 1;
+                    Abbruch532(j,LR) = Abbruch532(j,LR)+10; %keine Wolkenfreien Positionen gefunden, Einfach zwischen 200 und 300 m unterm Flugzeug zu CLEAR erkl?rt
+                end
+                
+                
+                % wir glauben, dass die Wolkenmaske und damit die Verteilung, an welchen
+                % Positionen das LR f?r Aerosol oder Wolken gesetzt wurde, "richtig genug
+                % ist" um die eigentliche Rechnung durchzuf?hren. Wir iterireren jetzt (mit
+                % dem hoffentlich richtigem LR f?r Aerosol die Randbedingung so lange, bis
+                % die L?sung f?r den Fall "keine dicke Wolke" stimmt.
+                
+                
+                BSR532haben = mymedian(Btemp532(guteaeroposi));      %#ok<NASGU> % war mean  %% benutzt er das spaeter ueberhaupt noch?
+                BSR532sollarr(j)=mymedian(BSR532Karlmedianvgl(guteaeroposi)); %BSRsoll ist jetzt das ziel fuer die upper boundary condition
+                if BSR532sollarr(j) < BSR532mintrust-diffisoll  || ~isfinite(BSR532sollarr(j))
+                    BSR532sollarr(j) = BSR532sollnotfall;
+                    Abbruch532(j,LR) = Abbruch532(j,LR)+0.3; %????????????????????????????????????????????????das sollte gar nicht passieren k?nnen
+                end
+                
+                
+                
+                condi=1; iter=0; itmax=500;
+                controllBSRWert=zeros(itmax,1);
+                while condi
+                    iter=iter+1;
+                    if iter >= itmax 
+                        condi=0; 
+                        disp('keine Konvergenz gefunden 532P');  j, 
+                        Abbruch532(j,LR) = Abbruch532(j,LR)+10 %Konvergiert nicht 2.Ansatz
+                        %hier w?re es jetzt gescchickt mit einem median
+                        %CLidar aus vorherigen Messugnen Das signal zu
+                        %multiplizieren und dann das als BSRsoll bzw. UBC
+                        %zu nehmen
+                    end
+                    
+                    BSRAtFiterr = BSRAtFit532arr(j) ./ 5;
+                    [Beta, dBdR532, dBdLR532, dBdP532, CLidar532] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
+                        LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
+                    %Anmerkung, eingentlich ist C in der Lidargleichung nur
+                    %ein fixer wert, aber weil wir die Lidargleichung f?r
+                    %jedes rangegate umgestellt haben kommt ein Vektor
+                    %raus. Da wo das komplett off ist stimmt mit dem
+                    %retrieval etwas nicht. - z.B. H?ufig unterhalb des
+                    %Bodens
+                    
+                    Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);% nur der Aersosol anteil der Rueckstreuung, molekularer Anteil abgezogen
+                    
+                    Betaaer532err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));%Summe aller moeglichen Fehlerquellen
+                    
+                    %Fehler in BSR umgerechnet (warum auch immer)
+                    Btemp532(Sel532P)=Beta./BeRa532(Sel532P,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532P,1);
+                    
+                    BSR532haben = mymedian(Btemp532(guteaeroposi)); % war mymean % mittlerer Wert in UBC die dann mit mittlerem Wert mit veraenderter LBC verglichen wird
+                    
+                    q=BSRAtFit532arr(j)+0.2; %LBC veraendern
+                    
+                    [Beta2, ~, ~, ~, ~] = klettinv_ableit4( q, FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
+                        LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
+                    BetaAer532_2(Sel532P)=Beta2-BeRa532(Sel532P,1);
+                    %fuer den Vergleich brauchen wir keine Fehlerabschaetzung
+                    %BetaAer532_2err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
+                    Btemp532_2(Sel532P)=Beta2./BeRa532(Sel532P,1); %Btemp532_2err(Sel532P)=BetaAer532_2err(Sel532P,j)./BeRa532(Sel532P,1);
+                    
+                    BSR532haben2 = mymedian(Btemp532_2(guteaeroposi));   % war mean
+                    %vergleich
+                    deltab=(BSR532haben2-BSR532haben);
+                    
+                    %das ist damit man die zwischenwerte der iterationen
+                    %plotten kann - eigentlich nicht wichtig
+                    %                 BetaKlett2(:,iter,j)= Beta;
+                    %                 LBCKlett2(:,j)=BSRAtFit532arr(j);
+                    %                 UBCKlett2(:,iter,j)=  Btemp532;
+                    %                 LRKlett2(:,iter,j)= LR532arr(Sel532P,j);
+                    %                 CKlett2(:,iter,j)=CLidar532;
+                    %                 clearKlett2(guteaeroposi,iter,j)= 1;
+                    
+                    HKlett2(:,j)=H(Sel532P); %#ok<AGROW,NASGU>
+                    
+                    
+                    if abs(deltab) > 0.01 %wenn sich noch was veraendert hat
+                        w=(BSR532sollarr(j) - BSR532haben) ./ deltab;
+                        BSRAtFit532arr(j) = BSRAtFit532arr(j) + w.*0.2;
+                    else
+                        condi=0; %disp('bringt nichts mehr'),
+                    end
+                    
+                    diffi = abs(BSR532haben - BSR532sollarr(j));
+                    
+                    if abs(diffi) < diffisoll, condi=0;  end  % normales Ende % das ist eigentlich doppelt gemoppelt, aber solange es funktioniert und nicht st?rt ... 
+                    
+                    %Das hier ist nur wenn man zwischendurch plotten will
+                    %ob die ganzen iterationen ?berhaupt etwas bringen
+                    controllBSRWert(iter) =  BSR532haben;
+                end % while f?r die Randbedingung
+                
+                %sporadisch kommen zu niedrige Rd-bedingungen vor, weil vermutlich die
+                %LR total falsch sind. Dies wird hier abgefangen: (gefunden bei 532S)
+                %Wenn die untere Randbedingung winzig klein ist???
+                if BSRAtFit532arr(j) < BSR532mintrust -diffisoll
+                    BSRAtFit532arr(j) = BSR532mintrust;
+                    Abbruch532(j,LR) = Abbruch532(j,LR)+2000;% ??? das passiert andauernd.  und vor allem macht er dann ja auch nichts mehr damit ??? vielleicht weil hier am Anfang sehr viel Wolke sehr weit oben ist? Oder ist die Wolke zu dicht und er interpretiert das Rauschen zu sehr.  
+                end
+                
+                
+                
+                %LR variation hier rausgeloescht
+                
+                
+                %matrizen werden zusammengesetzt
+                %dritte Dimension 1 - 1.LR (theoretisches wasser), 2 -LR wie
+                %Aerosol, 3 LR wie Eis in LAMPERT
+                
+                %molekulare anteil
+                %BeRa532(Sel532P,1); % da das aus den monatsmitteln der Radiosonden kommt sollte das fuer jeden Flug gleich sein
+                PositionUBC = zeros(size(BSR532Klett));
+                
+                %backscatterratio (beta total / beta mol)
+                PositionUBC(guteaeroposi,j,LR)= 1;
+                BSR532Klett(Sel532P,j,LR)=Btemp532(Sel532P);
+                BSR532Kletterr(Sel532P,j,LR)=Btemp532err(Sel532P);
+                
+                %backscatter (mit oder ohne molekularem Anteil??? )
+                BetaAer532Klett(Sel532P,j,LR)=Betaaer532(Sel532P);
+                BetaAer532Kletterr(Sel532P,j,LR)=Betaaer532err(Sel532P,j);
+                %attenuated backscatter
+                attenu532P(Sel532P,j,LR) = P532Klett(Sel532P,j).*H(Sel532P).^2 ./ CLidar532(Sel532P(1));
+                % Fehlerquelle im attenuated backscatter ist nur das Rauschen und ein fehler in der Annahme der oberen randbedingung
+                attenu532Perr(Sel532P,j,LR) = abs(P532Klettnoise(Sel532P,j).*H(Sel532P).^2 ./ CLidar532(Sel532P(1))) + abs(attenu532P(Sel532P,j) ./ CLidar532(Sel532P(1)).*0.1.*CLidar532(Sel532P(1)));
+                dBeta532dP(Sel532P,j,LR)=dBdP532; %Fehler durch Rauschen
+                dBeta532dR(Sel532P,j,LR)=dBdR532; %Fehler durch untere Randbedingung
+                dBeta532dLR(Sel532P,j,LR)=dBdLR532; %Fehler durch falsches LR
+                %Fehler durch falsche obere Randbedingung ist linaer. wenn oben
+                %10% mehr sind dann muesste das attenuated backscatter profil
+                %komplett 10% mehr sein
+                C532Lidar_mat(Sel532P,j,LR) =CLidar532; % LIdarkonstante, sollte theoretisch f?r alle drei LR gleich sein (Signal(rangekorrigiert und hintergrundbereinigt)*Lidarkonstante=attenuated backscatter. - guter sanity check
+                Abbruch532_mat(j,LR)= Abbruch532(j);
+                %attenuation
+                AlphaAer532(:,j,LR)=BetaAer532Klett(:,j,LR).*LR532arr(:,j,LR);
+                %attenuation ist Backscatter (beta)*LR
+                AlphaAer532err(:,j,LR)= abs(BetaAer532Kletterr(:,j).*LR532arr(:,j,LR)) + abs(BetaAer532Klett(:,j).*LR532arrerr(:,j));
+                
+                
+                
+                
+                
+                % finales Abspeichern: ----------------------------------------
+                
+                %matrizen werden zusammengesetzt
+                
+               
+                
+                
+                
+                
+                Wolkenmaske(wowolke,j,1) = 1;
+                
+                
+            end % for Zeitschritte "entries"
+
+        end % for LR
         
         
         
@@ -884,12 +867,13 @@ else
         
         
         speichern532p=['BeRa532 AlRay532'...%rayleigh profile for molcular scattering
-            ' P532roh P532Klett P532Klettnoise'... %rohsignal, range korrigiertes signal, Noise
+            ' P532roh P532Klett P532Klettnoise'... %rohsignal, Hintergrund korrigiertes signal, Noise
             ' BSRAtFit532arr LR532arr'... %Annahme untere Randbedingung (7.5-107.5m) Annahmen fuer Lidarratio
+            ' C532Lidar_mat PositionUBC'...
             ' BetaAer532Klett BetaAer532Kletterr' ... %aerosol (and cloud) backscatter, basically non-molecular backscatter and its maximum error -namenvergessen-Fehlerfortpflanzung
             ' AlphaAer532 AlphaAer532err'...aerosol (and cloud) attenuation            % ' BSR532Klett BSR532Kletterr'... backscatter ratio (total backscatter / molcular backscatter  - unnoetig weil wir ja die einzelnen Komponenten davon speichern
             ' dBeta532dP  dBeta532dR dBeta532dLR'... %veraenderung von beta pro 1 veraenderung P (z.b. durch Rauschen), oder Randbedingung oder LR
-            ' Abbruch532 P532Abackground']; %die Fehler variable, falls z.B. unterm Flugzeug eine Wolke ist oder es nicht konvergiert, die Hintergrundkorrektur, die wir abgekogen haben
+            ' Abbruch532_mat P532Abackground']; %die Fehler variable, falls z.B. unterm Flugzeug eine Wolke ist oder es nicht konvergiert, die Hintergrundkorrektur, die wir abgekogen haben
         
         
         speichern532s=['P532Sroh P532SKlett P532SKlettnoise'];

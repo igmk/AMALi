@@ -10,7 +10,7 @@ AlRay, BeRa, rueckwaerts)
 % BetaerrdLR=dBdLR.*15;    bei deltaLR = 15
 % BetaerrdR=dBdR.*delta_Randbedg
 % CLidar = die sich ergebende Lidarkonstante als Probe
-% rueckwaerts: wenn gesetzt wird zum Geraet zurueck integriert
+% rueckwaerts: wenn gesetzt wird zum Geraet zurueck integriert  %?solltedas nicht immer der Fall sein? 
 
 
   MFile = [upper(mfilename) ': '];
