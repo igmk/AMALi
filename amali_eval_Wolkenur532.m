@@ -423,13 +423,20 @@ else
         SNR355=P355Klett./P355Klettnoise; %#ok<NASGU>
         
         
-        % Rayleighgr?ssen + Density auf Amaligitter interpolieren
-        NAlRay532aufl=interp1(NH,NAlRay532,H);
-        AlRay532=NAlRay532aufl(end:-1:1);
+        % Rayleighgr?ssen + Density auf Amaligitter interpolieren   ------
+        % achtung es ist zwar auf dem richtigen Gitterabstand, aber fuer
+        % jeden Zeitschritt gleich, es faengt immer auf 3500(?) m an und
+        % endet bei 0
+        NAlRay532aufl=interp1(NH,NAlRay532,H);%hier kriegt es die richtigen 7.5m-abstaende
+        AlRay532_kurz=NAlRay532aufl(end:-1:1); %hier wird es auf den kopf gestellt, aber es zaehlt immer ab 3500 nicht ab Flugzeughoehe!!!
+        AlRay532= [AlRay532_kurz; repelem(AlRay532_kurz(LH) , 500)' ];
         NAlRay355aufl=interp1(NH,NAlRay355,H);
         AlRay355=NAlRay355aufl(end:-1:1); %#ok<NASGU>
+        
         NBeRa532aufl=interp1(NH,NBeRa532,H);
-        BeRa532=NBeRa532aufl(end:-1:1);
+        BeRa532_kurz=NBeRa532aufl(end:-1:1);
+        BeRa532= [BeRa532_kurz; repelem(BeRa532_kurz(LH) , 500)' ];
+        
         NBeRa532Saufl=interp1(NH,NBeRa532S,H);
         BeRa532S=NBeRa532Saufl(end:-1:1); %#ok<NASGU>
         NBeRa355aufl=interp1(NH,NBeRa355,H);
@@ -437,7 +444,7 @@ else
         NDensityaufl=interp1(NH,NDensity,H);
         Density=NDensityaufl(end:-1:1);
         
-        
+        clear NAlRay532aufl AlRay532_kurz NAlRay355aufl NBeRa532aufl BeRa532_kurz NBeRa355aufl NDensityaufl
         % Nun der schlaue Klett
         % wir brauchen f?r jeden Kanal:
         % BSRAtFitarr = das array der BSR-Werte f?r den Fit
@@ -546,13 +553,15 @@ else
                 % "select" die guten H?henbins, in denen gerechnet werden soll.
                 %
                 Sel532P = connrnge( H >= 0 & H <= Hcalcrange & ...
-                    P532Klett(:,j) > 0 & ...
+                    P532Klett(:,j) > 0 & ... %der Bereich bevor das Klettsignal so rauschig wird, das es das erste mal negativ wird. (warum ist das immer bei 457??? )
                     Density(:,1) > 0, 1);
                 if length(Sel532P) > 1
                     Sel532P = (Sel532P(1):Sel532P(2));
                 else
                     Sel532P = [];
                 end
+                
+               
                 
                 %             % "select" die guten H?henbins, in denen gerechnet werden soll.
                 %             %
@@ -583,8 +592,11 @@ else
                 
                 
                 
+                
+                [~,posi]=min(abs(matlabzeit(j)-flugzeit)); 
+                
+                Sel532Ray = Sel532P + round((3500-flughoehe(posi))/7.5);
                 %set range gates for lower boundary condition
-                [~,posi]=min(abs(matlabzeit(j)-flugzeit));
                 hwo2=flughoehe(posi)-7.5;
                 hwo1=flughoehe(posi)-107.5;
                 FitRangearr(1,j)=hwo1; FitRangearr(2,j)=hwo2;
@@ -619,17 +631,18 @@ else
                     BSRAtFiterr = BSRAtFit532arr(j) ./ 5; %warum wird hier durch 5 geteilt ????  irgendwas fuer fehlerabschaetzung
                     
                     [Beta, dBdR532, dBdLR532, dBdP532, CLidar] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                        LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1)); %#ok<ASGLU>
-                    Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);
+                        LR532arr(Sel532P,j,LR), AlRay532(Sel532Ray,1), BeRa532(Sel532Ray,1)); %#ok<ASGLU>
+                    %Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1); das
+                    %reicht wenn das im letzten schritt berechnet wird
                     Betaaer532err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
-                    Btemp532(Sel532P)=Beta./BeRa532(Sel532P,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532P,1);
+                    Btemp532(Sel532P)=Beta./BeRa532(Sel532Ray,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532Ray,1);
                     tmp=mymean(Btemp532(Sel532P(clearint)));
                     
                     [Beta2, ~, ~, ~, ~] = klettinv_ableit4( BSRAtFit532arr(j)+1, FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                        LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
-                    BetaAer532_2(Sel532P)=Beta2-BeRa532(Sel532P,1);
+                        LR532arr(Sel532P,j,LR), AlRay532(Sel532Ray,1), BeRa532(Sel532Ray,1));
+                    BetaAer532_2(Sel532P)=Beta2-BeRa532(Sel532Ray,1);
                     %BetaAer532_2err(Sel532P,j)=abs(dBdR5322.*BSRAtFiterr)+abs(dBdLR5322.*LR532arrerr(Sel532P,j))+abs(dBdP5322.*P532Kletterr(Sel532P,j));
-                    Btemp532_2(Sel532P)=Beta2./BeRa532(Sel532P,1); %Btemp532_2err(Sel532P)=BetaAer532_2err(Sel532P,j)./BeRa532(Sel532P,1);
+                    Btemp532_2(Sel532P)=Beta2./BeRa532(Sel532Ray,1); %Btemp532_2err(Sel532P)=BetaAer532_2err(Sel532P,j)./BeRa532(Sel532P,1);
                     tmp2=mymean(Btemp532_2(Sel532P(clearint)));
                     
                     deltasoll = BSR532mintrust - tmp;
@@ -733,7 +746,7 @@ else
                     
                     BSRAtFiterr = BSRAtFit532arr(j) ./ 5;
                     [Beta, dBdR532, dBdLR532, dBdP532, CLidar532] = klettinv_ableit4( BSRAtFit532arr(j), FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                        LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
+                        LR532arr(Sel532P,j,LR), AlRay532(Sel532Ray,1), BeRa532(Sel532Ray,1));
                     %Anmerkung, eingentlich ist C in der Lidargleichung nur
                     %ein fixer wert, aber weil wir die Lidargleichung f?r
                     %jedes rangegate umgestellt haben kommt ein Vektor
@@ -741,23 +754,23 @@ else
                     %retrieval etwas nicht. - z.B. H?ufig unterhalb des
                     %Bodens
                     
-                    Betaaer532(Sel532P)=Beta-BeRa532(Sel532P,1);% nur der Aersosol anteil der Rueckstreuung, molekularer Anteil abgezogen
+                    Betaaer532(Sel532P)=Beta-BeRa532(Sel532Ray,1);% nur der Aersosol anteil der Rueckstreuung, molekularer Anteil abgezogen
                     
                     Betaaer532err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));%Summe aller moeglichen Fehlerquellen
                     
                     %Fehler in BSR umgerechnet (warum auch immer)
-                    Btemp532(Sel532P)=Beta./BeRa532(Sel532P,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532P,1);
+                    Btemp532(Sel532P)=Beta./BeRa532(Sel532Ray,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532Ray,1);
                     
                     BSR532haben = mymedian(Btemp532(guteaeroposi)); % war mymean % mittlerer Wert in UBC die dann mit mittlerem Wert mit veraenderter LBC verglichen wird
                     
                     q=BSRAtFit532arr(j)+0.2; %LBC veraendern
                     
                     [Beta2, ~, ~, ~, ~] = klettinv_ableit4( q, FitRangearr(:,j), H(Sel532P), P532Klett(Sel532P,j), P532Klettnoise(Sel532P,j), ...
-                        LR532arr(Sel532P,j,LR), AlRay532(Sel532P,1), BeRa532(Sel532P,1));
-                    BetaAer532_2(Sel532P)=Beta2-BeRa532(Sel532P,1);
+                        LR532arr(Sel532P,j,LR), AlRay532(Sel532Ray,1), BeRa532(Sel532Ray,1));
+                    BetaAer532_2(Sel532P)=Beta2-BeRa532(Sel532Ray,1);
                     %fuer den Vergleich brauchen wir keine Fehlerabschaetzung
                     %BetaAer532_2err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));
-                    Btemp532_2(Sel532P)=Beta2./BeRa532(Sel532P,1); %Btemp532_2err(Sel532P)=BetaAer532_2err(Sel532P,j)./BeRa532(Sel532P,1);
+                    Btemp532_2(Sel532P)=Beta2./BeRa532(Sel532Ray,1); %Btemp532_2err(Sel532P)=BetaAer532_2err(Sel532P,j)./BeRa532(Sel532P,1);
                     
                     BSR532haben2 = mymedian(Btemp532_2(guteaeroposi));   % war mean
                     %vergleich
@@ -817,7 +830,7 @@ else
                 BSR532Klett(Sel532P,j,LR)=Btemp532(Sel532P);
                 BSR532Kletterr(Sel532P,j,LR)=Btemp532err(Sel532P);
                 
-                %backscatter (mit oder ohne molekularem Anteil??? )
+                %backscatter (ohne molekularem Anteil??? )
                 BetaAer532Klett(Sel532P,j,LR)=Betaaer532(Sel532P);
                 BetaAer532Kletterr(Sel532P,j,LR)=Betaaer532err(Sel532P,j);
                 %attenuated backscatter
