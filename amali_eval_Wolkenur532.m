@@ -411,11 +411,11 @@ else
         
         % warum ausgerechnet 1.5% mal die Std ist mir raetselhaft
         for j=1:entries
-            backgroundnoise532(j)=std(data532(j,pretrigrange)).*1.5;
+            backgroundnoise532(j)=std(data532(j,pretrigrange)).*2;%covers 97.8% of variabbility in the background
             P532Klettnoise(:,j)=real(sqrt(P532Klett(:,j)))+backgroundnoise532(j);
-            backgroundnoise532S(j)=std(data532s(j,pretrigrange)).*1.5;
+            backgroundnoise532S(j)=std(data532s(j,pretrigrange)).*2;
             P532SKlettnoise(:,j)=real(sqrt(P532SKlett(:,j)))+backgroundnoise532S(j);
-            backgroundnoise355(j)=std(data355(j,pretrigrange)).*1.5;
+            backgroundnoise355(j)=std(data355(j,pretrigrange)).*2;
             P355Klettnoise(:,j)=real(sqrt(P355Klett(:,j)))+backgroundnoise355(j);
         end
         SNR532=P532Klett./P532Klettnoise; %#ok<NASGU>
@@ -498,8 +498,13 @@ else
         % 5: guteaeroposi = 0;
         %
         
+        PositionUBC = zeros(size(BSR532Klett));
+        C532Lidar_mat = zeros(size(BSR532Klett));
         
-        Ptheo532=2.*BeRa532./H.^2.*exp(-2.*qdrupvar(H,2.*AlRay532)); %was passiert hier? Wo kommt die 2 her? ansonsten ist das die Lidargleichung fuer reine rayleigh streuung
+        Ptheo532=2.*BeRa532(1:end-500)./H.^2.*exp(-2.*qdrupvar(H,2.*AlRay532(1:end-500))); %was passiert hier? Wo kommt die 2 her? ansonsten ist das die Lidargleichung fuer reine rayleigh streuung
+        %eigentlich nicht ganz korrekt weil es auch fuer die flughoehe
+        %angepasst werden muesste, aber wir hoffen jetzt mal, das es fuer
+        %die erste Wolkenmaske gut genug ist.
         
         % es hat etwas zu tun das wir das signal erstmal auf die richtige
         % groessenordnug skalieren, aber was genau - ???
@@ -542,7 +547,7 @@ else
                 
                 
                 % Definitionen innerhalb eines Zeitschrittes
-                Psoll532=Ptheo532 ./Ptheo532(UeberlappEndeposi).*P532Klett(UeberlappEndeposi,j); % ???  ich hab keinen Schimmer was hier passiert
+                Psoll532=Ptheo532 ./Ptheo532(UeberlappEndeposi).*P532Klett(UeberlappEndeposi,j); % ???  ich hab keinen Schimmer was hier passiert irgendeine normierung?
                 %Psoll532S=Ptheo532S ./Ptheo532S(UeberlappEndeposi).*P532SKlett(UeberlappEndeposi,j);
                 %Psoll355=Ptheo355 ./Ptheo355(UeberlappEndeposi).*P355Klett(UeberlappEndeposi,j);
                 ichmerkmirkomischepositionen = 0; %#ok<NASGU>
@@ -561,7 +566,7 @@ else
                     Sel532P = [];
                 end
                 
-               
+                
                 
                 %             % "select" die guten H?henbins, in denen gerechnet werden soll.
                 %             %
@@ -593,7 +598,7 @@ else
                 
                 
                 
-                [~,posi]=min(abs(matlabzeit(j)-flugzeit)); 
+                [~,posi]=min(abs(matlabzeit(j)-flugzeit));
                 
                 Sel532Ray = Sel532P + round((3500-flughoehe(posi))/7.5);
                 %set range gates for lower boundary condition
@@ -674,7 +679,7 @@ else
                     end   % Rdbeding. irrelevant
                     
                     if iter==itmax
-                        Abbruch532(j,LR)=Abbruch532(j,LR)+100; %es konvergiert nicht (1. Ansatz) 
+                        Abbruch532(j,LR)=Abbruch532(j,LR)+100; %es konvergiert nicht (1. Ansatz)
                     end
                     
                     % deltab
@@ -689,7 +694,7 @@ else
                 end
                 %wo532= find(Btemp532 < Wolkenschwelle532 );    %& H< hwo1);
                 
-
+                
                 % alleaeroposi=sort(cat(1,wo532,wo532S,wo355));
                 % da=diff(alleaeroposi);
                 % da2=find(da >0);
@@ -734,9 +739,9 @@ else
                 controllBSRWert=zeros(itmax,1);
                 while condi
                     iter=iter+1;
-                    if iter >= itmax 
-                        condi=0; 
-                        disp('keine Konvergenz gefunden 532P');  j, 
+                    if iter >= itmax
+                        condi=0;
+                        disp('keine Konvergenz gefunden 532P');  j,
                         Abbruch532(j,LR) = Abbruch532(j,LR)+10 %Konvergiert nicht 2.Ansatz
                         %hier w?re es jetzt gescchickt mit einem median
                         %CLidar aus vorherigen Messugnen Das signal zu
@@ -797,7 +802,7 @@ else
                     
                     diffi = abs(BSR532haben - BSR532sollarr(j));
                     
-                    if abs(diffi) < diffisoll, condi=0;  end  % normales Ende % das ist eigentlich doppelt gemoppelt, aber solange es funktioniert und nicht st?rt ... 
+                    if abs(diffi) < diffisoll, condi=0;  end  % normales Ende % das ist eigentlich doppelt gemoppelt, aber solange es funktioniert und nicht st?rt ...
                     
                     %Das hier ist nur wenn man zwischendurch plotten will
                     %ob die ganzen iterationen ?berhaupt etwas bringen
@@ -809,7 +814,7 @@ else
                 %Wenn die untere Randbedingung winzig klein ist???
                 if BSRAtFit532arr(j) < BSR532mintrust -diffisoll
                     BSRAtFit532arr(j) = BSR532mintrust;
-                    Abbruch532(j,LR) = Abbruch532(j,LR)+2000;% ??? das passiert andauernd.  und vor allem macht er dann ja auch nichts mehr damit ??? vielleicht weil hier am Anfang sehr viel Wolke sehr weit oben ist? Oder ist die Wolke zu dicht und er interpretiert das Rauschen zu sehr.  
+                    Abbruch532(j,LR) = Abbruch532(j,LR)+2000;% ??? das passiert andauernd.  und vor allem macht er dann ja auch nichts mehr damit ??? vielleicht weil hier am Anfang sehr viel Wolke sehr weit oben ist? Oder ist die Wolke zu dicht und er interpretiert das Rauschen zu sehr.
                 end
                 
                 
@@ -823,7 +828,7 @@ else
                 
                 %molekulare anteil
                 %BeRa532(Sel532P,1); % da das aus den monatsmitteln der Radiosonden kommt sollte das fuer jeden Flug gleich sein
-                PositionUBC = zeros(size(BSR532Klett));
+                
                 
                 %backscatterratio (beta total / beta mol)
                 PositionUBC(guteaeroposi,j,LR)= 1;
@@ -844,7 +849,7 @@ else
                 %10% mehr sind dann muesste das attenuated backscatter profil
                 %komplett 10% mehr sein
                 C532Lidar_mat(Sel532P,j,LR) =CLidar532; % LIdarkonstante, sollte theoretisch f?r alle drei LR gleich sein (Signal(rangekorrigiert und hintergrundbereinigt)*Lidarkonstante=attenuated backscatter. - guter sanity check
-                Abbruch532_mat(j,LR)= Abbruch532(j);
+                %Abbruch532_mat(j,LR)= Abbruch532(j); %vordefinieren
                 %attenuation
                 AlphaAer532(:,j,LR)=BetaAer532Klett(:,j,LR).*LR532arr(:,j,LR);
                 %attenuation ist Backscatter (beta)*LR
@@ -858,7 +863,7 @@ else
                 
                 %matrizen werden zusammengesetzt
                 
-               
+                
                 
                 
                 
@@ -867,7 +872,7 @@ else
                 
                 
             end % for Zeitschritte "entries"
-
+            
         end % for LR
         
         
@@ -886,7 +891,7 @@ else
             ' BetaAer532Klett BetaAer532Kletterr' ... %aerosol (and cloud) backscatter, basically non-molecular backscatter and its maximum error -namenvergessen-Fehlerfortpflanzung
             ' AlphaAer532 AlphaAer532err'...aerosol (and cloud) attenuation            % ' BSR532Klett BSR532Kletterr'... backscatter ratio (total backscatter / molcular backscatter  - unnoetig weil wir ja die einzelnen Komponenten davon speichern
             ' dBeta532dP  dBeta532dR dBeta532dLR'... %veraenderung von beta pro 1 veraenderung P (z.b. durch Rauschen), oder Randbedingung oder LR
-            ' Abbruch532_mat P532Abackground']; %die Fehler variable, falls z.B. unterm Flugzeug eine Wolke ist oder es nicht konvergiert, die Hintergrundkorrektur, die wir abgekogen haben
+            ' Abbruch532 P532Abackground']; %die Fehler variable, falls z.B. unterm Flugzeug eine Wolke ist oder es nicht konvergiert, die Hintergrundkorrektur, die wir abgekogen haben
         
         
         speichern532s=['P532Sroh P532SKlett P532SKlettnoise'];
@@ -912,8 +917,130 @@ else
         liste=[speichern532p ' ' speichern532s ' ' speichern355p sonstiges];
         
         speichern =['save ' speicherdir Speichernamepraefix filename ' ' liste];
+       
+        %Das hier wieder einkommetieren wenn matlabfile geschrieben werden
+        %soll!
+        %eval(speichern)
         
-        eval(speichern)
+        %%Save as ncdffile
+        %ncid = netcdf.create([speicherdir Speichernamepraefix filename '.nc'],'NETCDF4');
+        ncid = netcdf.create([speicherdir Speichernamepraefix filename '.nc'],'CLOBBER');
+        
+        %define dimensions
+        time = netcdf.defDim(ncid,'time',size(AlphaAer532,2));
+        dist = netcdf.defDim(ncid,'dist',size(AlphaAer532,1));
+        lr = netcdf.defDim(ncid,'lr',size(AlphaAer532,3));
+        
+        
+        %TYPEs fehlen noch!!!!!
+        %define variables and put values insinde
+        Time = netcdf.defVar(ncid,'Time','nc_int',[time]);
+        netcdf.putAtt(ncid,Time,'unit','immenochmatlabzeit');
+        
+        Dist = netcdf.defVar(ncid,'Distance','nc_float',[dist]);
+        netcdf.putAtt(ncid,Dist,'unit','distance from aircraft [m]');
+        
+        LR = netcdf.defVar(ncid,'LidarRatio','nc_int',[lr]);
+        netcdf.putAtt(ncid,LR,'unit','sr');
+        netcdf.putAtt(ncid,LR,'longname','LR assumed in cloud');
+        
+        
+        P532p_raw = netcdf.defVar(ncid,'P532p_raw','nc_float',[dist time]);
+        netcdf.putAtt(ncid,P532p_raw,'longname','raw signal at 532nm parallel polarization');
+        
+        P532s_raw = netcdf.defVar(ncid,'P532s_raw','nc_float',[dist time]);
+        netcdf.putAtt(ncid,P532s_raw,'longname','raw signal at 532nm vertical polarization');
+        
+        P355_raw = netcdf.defVar(ncid,'P532_raw','nc_float',[dist time]);
+        netcdf.putAtt(ncid,P355_raw,'longname','raw signal at 355nm no polarization');
+        
+        
+        P532p_bg = netcdf.defVar(ncid,'P532p_bg','nc_float',[time]);
+        netcdf.putAtt(ncid,P532p_bg,'longname','background signal, mean signal in pretrigger range in 532p channel');
+        
+        P532s_bg = netcdf.defVar(ncid,'P532s_bg','nc_float',[time]);
+        netcdf.putAtt(ncid,P532s_bg,'longname','background signal, mean signal in pretrigger range in 532s channel');
+        
+        P355_bg = netcdf.defVar(ncid,'P355_bg','nc_float',[time]);
+        netcdf.putAtt(ncid,P355_bg,'longname','background signal, mean signal in pretrigger range in 355nm channel');
+        
+        
+        P532p_noise = netcdf.defVar(ncid,'P532_noise','nc_float',[dist time]);
+        netcdf.putAtt(ncid,P532p_noise,'longname','2 standart deviation of signal in pretrigger range in 532p channel + sqrt(P532p_raw)');
+        
+        P532s_noise = netcdf.defVar(ncid,'P532s_noise','nc_float',[dist time]);
+        netcdf.putAtt(ncid,P532s_noise,'longname','2 standart deviation of signal in pretrigger range in 532s channel + sqrt(P532s_raw)');
+        
+        P355_noise = netcdf.defVar(ncid,'P355_noise','nc_float',[dist time]);
+        netcdf.putAtt(ncid,P355_noise,'longname','2 standart deviation of signal in pretrigger range in 355 channel + sqrt(P355_raw)');
+        
+        
+        B532p = netcdf.defVar(ncid,'B532p','nc_float',[dist time lr]);
+        netcdf.putAtt(ncid,B532p,'longname','aerosol backscatter at 532nm parallel polarization');
+        
+        BSR532p = netcdf.defVar(ncid,'BSR532p','nc_float',[dist time lr]);
+        netcdf.putAtt(ncid,BSR532p,'longname','backscatter ratio at 532nm parallel polarization');
+        netcdf.putAtt(ncid,BSR532p,'description','ratio between aerosol backscatter to molecular rayleigh at 532nm parallel polarization'); %sollte das nicht total / rayleigh sein?
+        
+        A532p = netcdf.defVar(ncid,'A532p','nc_float',[dist time lr]);
+        netcdf.putAtt(ncid,A532p,'longname','aerosol attenuation at 532nm parallel polarization');
+        
+        Error_Code = netcdf.defVar(ncid,'Error_Code','nc_int',[time lr]);
+        netcdf.putAtt(ncid,Error_Code,'description','100=, 200, 10=, 20=, 2000=');
+        
+        
+%         Position_LBC = netcdf.defVar(ncid,'Position_LBC','nc_float',[dist time lr]);
+%         netcdf.putAtt(ncid,Position_LBC,'longname','position of lower boundry condition');
+        
+        Position_UBC = netcdf.defVar(ncid,'Position_UBC','nc_int',[dist time lr]);
+        netcdf.putAtt(ncid,Position_UBC,'longname','position of lower boundry condition');
+        
+        LC532p = netcdf.defVar(ncid,'LC532p','nc_double',[dist time lr]);
+        netcdf.putAtt(ncid,LC532p,'longname','lidar constant for 532p');
+        netcdf.putAtt(ncid,LC532p,'description','calculated at each position from B, A and P as sanity check'); %sollte relativ konstant sein.
+        
+        
+        netcdf.endDef(ncid)
+        
+        
+        
+        %netcdf.putVar(ncid,Time,posixtime(matlabzeit))%funktioniert nicht
+        netcdf.putVar(ncid,Time,matlabzeit);
+        
+        netcdf.putVar(ncid,Dist,H);
+        
+        netcdf.putVar(ncid,LR,[LR532wolke LR532wolke2 LR532wolke3]);
+        
+        netcdf.putVar(ncid,P532p_raw,P532roh);
+        netcdf.putVar(ncid,P532s_raw,P532Sroh) ;
+        netcdf.putVar(ncid,P355_raw, P355roh);
+        
+        netcdf.putVar(ncid,P532p_bg,P532Abackground)   ;
+        netcdf.putVar(ncid,P532s_bg,P532SAbackground);
+        netcdf.putVar(ncid,P355_bg, P355Abackground);
+        
+        netcdf.putVar(ncid,P532p_noise,P532Klettnoise);
+        netcdf.putVar(ncid,P532s_noise,P532SKlettnoise);
+        netcdf.putVar(ncid,P355_noise, P355Klettnoise);
+        
+        netcdf.putVar(ncid,B532p,BetaAer532Klett);
+        
+        netcdf.putVar(ncid,BSR532p,BSR532Klett);
+        
+        netcdf.putVar(ncid,A532p,AlphaAer532);
+        
+        netcdf.putVar(ncid,Error_Code,Abbruch532);
+        
+        %netcdf.putVar(ncid,Position_LBC,data);%brauchen wir das ueberhaupt? ist von der Flughoehe abhaengig und fix
+        
+        netcdf.putVar(ncid,Position_UBC,PositionUBC);
+        
+        netcdf.putVar(ncid,LC532p,C532Lidar_mat);
+        
+        
+        
+        
+        netcdf.close(ncid);
         
         
     end % for alle Daten eines Tages
