@@ -411,7 +411,7 @@ else
         
         % warum ausgerechnet 1.5% mal die Std ist mir raetselhaft
         for j=1:entries
-            backgroundnoise532(j)=std(data532(j,pretrigrange)).*2;%covers 97.8% of variabbility in the background
+            backgroundnoise532(j)=std(data532(j,pretrigrange)).*2;%covers 97.8% of variability in the background
             P532Klettnoise(:,j)=real(sqrt(P532Klett(:,j)))+backgroundnoise532(j);
             backgroundnoise532S(j)=std(data532s(j,pretrigrange)).*2;
             P532SKlettnoise(:,j)=real(sqrt(P532SKlett(:,j)))+backgroundnoise532S(j);
@@ -742,7 +742,7 @@ else
                     if iter >= itmax
                         condi=0;
                         disp('keine Konvergenz gefunden 532P');  j,
-                        Abbruch532(j,LR) = Abbruch532(j,LR)+10 %Konvergiert nicht 2.Ansatz
+                        Abbruch532(j,LR) = Abbruch532(j,LR)+10; %Konvergiert nicht 2.Ansatz
                         %hier w?re es jetzt gescchickt mit einem median
                         %CLidar aus vorherigen Messugnen Das signal zu
                         %multiplizieren und dann das als BSRsoll bzw. UBC
@@ -876,10 +876,21 @@ else
         end % for LR
         
         
+        P532roh=zeros(size(P532A))
+        P532Sroh=zeros(size(P532A))
+        P355roh=zeros(size(P532A))
         
-        P532roh=P532A'; %#ok<NASGU>
-        P532Sroh=P532SA'; %#ok<NASGU>
-        P355roh=P355A'; %#ok<NASGU>
+        for j=1:entries %warum muss das hier in einer schleife sein? 
+            
+            P532roh(j,:)=data532(j,pretriggerbins+1:pretriggerbins+LH);
+            P532Sroh(j,:)=data532s(j,pretriggerbins+1:pretriggerbins+LH);
+            P355roh(j,:)=data355(j,pretriggerbins+1:pretriggerbins+LH);
+                       
+        end
+        
+        P532roh=P532roh'; %#ok<NASGU> % das stimmte vorher nicht, das ist schon das hintergrundkorrigierte Signal gewesen!!!
+        P532Sroh=P532Sroh'; %#ok<NASGU>
+        P355roh=P355roh'; %#ok<NASGU>
         
         %das hier muss noch angepasst werden
         
@@ -934,8 +945,10 @@ else
         
         %TYPEs fehlen noch!!!!!
         %define variables and put values insinde
-        Time = netcdf.defVar(ncid,'Time','nc_int',[time]);
-        netcdf.putAtt(ncid,Time,'unit','immenochmatlabzeit');
+        %Time = netcdf.defVar(ncid,'Time','nc_int',[time]);%wenn zeit
+        %irgendwannn hoffentlich in sekunden abgelegt wird
+        Time = netcdf.defVar(ncid,'Time','nc_double',[time]);
+        netcdf.putAtt(ncid,Time,'unit','Achtung: immenochmatlabzeit');
         
         Dist = netcdf.defVar(ncid,'Distance','nc_float',[dist]);
         netcdf.putAtt(ncid,Dist,'unit','distance from aircraft [m]');
@@ -951,7 +964,7 @@ else
         P532s_raw = netcdf.defVar(ncid,'P532s_raw','nc_float',[dist time]);
         netcdf.putAtt(ncid,P532s_raw,'longname','raw signal at 532nm vertical polarization');
         
-        P355_raw = netcdf.defVar(ncid,'P532_raw','nc_float',[dist time]);
+        P355_raw = netcdf.defVar(ncid,'P355_raw','nc_float',[dist time]);
         netcdf.putAtt(ncid,P355_raw,'longname','raw signal at 355nm no polarization');
         
         
@@ -965,7 +978,7 @@ else
         netcdf.putAtt(ncid,P355_bg,'longname','background signal, mean signal in pretrigger range in 355nm channel');
         
         
-        P532p_noise = netcdf.defVar(ncid,'P532_noise','nc_float',[dist time]);
+        P532p_noise = netcdf.defVar(ncid,'P532p_noise','nc_float',[dist time]);
         netcdf.putAtt(ncid,P532p_noise,'longname','2 standart deviation of signal in pretrigger range in 532p channel + sqrt(P532p_raw)');
         
         P532s_noise = netcdf.defVar(ncid,'P532s_noise','nc_float',[dist time]);
