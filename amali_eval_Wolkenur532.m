@@ -709,15 +709,28 @@ else
                 %LR532Sarr(woaerosol,j) = LR532Saerosol;
                 %LR355arr(woaerosol,j) = LR355aerosol;
                 
-                guteaeroposi= connrnge(H>  UeberlappEnde & H < hwo1 & Btemp532 < Wolkenschwelle532); % das sucht die zusammenhaengenden Bereiche ohne Wolken
+                %gute aeroposi geht vom flugzeug zum Boden
+                guteaeroposi= connrnge(H>  UeberlappEnde & H < hwo1 & H<1500 & Btemp532 < Wolkenschwelle532); % das sucht die zusammenhaengenden Bereiche ohne Wolken, beschraenkt auf die 1000 m unter dem flugzeug damit wir nicht in die Grenzschicht kommen, wo die annahme, das es ist wie in NYA nicht mehr gelten wuerde
                 if length(guteaeroposi) > 1
-                    guteaeroposi = (guteaeroposi(1):guteaeroposi(2));%geeingnete position fuer vergleich (kontrollrange fuer BSR355soll
+                    guteaeroposi = (guteaeroposi(1):guteaeroposi(2));%geeingnete position fuer vergleich (kontrollrange fuer BSR355soll)
+                    %achtung guteaerosolposi zaehlt vom Flugzeug aus,
+                    %BSR532Karlmedianvgl zaehlt vom Boden aus.
+                    
+                    
                 else
-                    guteaeroposi = floor(UeberlappEnde/7.5 ):40;  % irgendwelche Positionen dicht unter Flugzeug
+                    guteaeroposi = floor(UeberlappEnde/7.5 ):floor(UeberlappEnde+200/7.5 );  % irgendwelche Positionen dicht unter Flugzeug
                     %ichmerkmirkomischepositionen = 1;
-                    Abbruch532(j,LR) = Abbruch532(j,LR)+10; %keine Wolkenfreien Positionen gefunden, Einfach zwischen 200 und 300 m unterm Flugzeug zu CLEAR erkl?rt
+                    Abbruch532(j,LR) = Abbruch532(j,LR)+10; %keine Wolkenfreien Positionen gefunden, Einfach zwischen 300 und 500 m unterm Flugzeug zu CLEAR erkl?rt
                 end
                 
+                fib = round((flughoehe(posi))/7.5);%Flughoehe in bins
+                guteaeroposi_b2t = fib - guteaeroposi; %das sollte jetzt das selbe sein wie gute aeroposi fuer vektoren die vom Boden 
+                
+                if guteaeroposi_b2t(end) <0, %irgendwo ein Fehler, wir landen unterm Boden
+                    guteaeroposi_b2t = floor(1000/7.5):floor(2000/7.5);
+                    Abbruch532(j,LR) = Abbruch532(j,LR)+10000;
+                    
+                end
                 
                 % wir glauben, dass die Wolkenmaske und damit die Verteilung, an welchen
                 % Positionen das LR f?r Aerosol oder Wolken gesetzt wurde, "richtig genug
@@ -727,7 +740,7 @@ else
                 
                 
                 BSR532haben = mymedian(Btemp532(guteaeroposi));      %#ok<NASGU> % war mean  %% benutzt er das spaeter ueberhaupt noch?
-                BSR532sollarr(j)=mymedian(BSR532Karlmedianvgl(guteaeroposi)); %BSRsoll ist jetzt das ziel fuer die upper boundary condition
+                BSR532sollarr(j)=mymedian(BSR532Karlmedianvgl(guteaeroposi_b2t)); %BSRsoll ist jetzt das ziel fuer die upper boundary condition
                 if BSR532sollarr(j) < BSR532mintrust-diffisoll  || ~isfinite(BSR532sollarr(j))
                     BSR532sollarr(j) = BSR532sollnotfall;
                     Abbruch532(j,LR) = Abbruch532(j,LR)+0.3; %????????????????????????????????????????????????das sollte gar nicht passieren k?nnen
@@ -741,7 +754,7 @@ else
                     iter=iter+1;
                     if iter >= itmax
                         condi=0;
-                        disp('keine Konvergenz gefunden 532P');  j,
+                        %disp('keine Konvergenz gefunden 532P');  j,
                         Abbruch532(j,LR) = Abbruch532(j,LR)+10; %Konvergiert nicht 2.Ansatz
                         %hier w?re es jetzt gescchickt mit einem median
                         %CLidar aus vorherigen Messugnen Das signal zu
@@ -763,8 +776,9 @@ else
                     
                     Betaaer532err(Sel532P,j)=abs(dBdR532.*BSRAtFiterr)+abs(dBdLR532.*LR532arrerr(Sel532P,j))+abs(dBdP532.*P532Klettnoise(Sel532P,j));%Summe aller moeglichen Fehlerquellen
                     
-                    %Fehler in BSR umgerechnet (warum auch immer)
-                    Btemp532(Sel532P)=Beta./BeRa532(Sel532Ray,1); Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532Ray,1);
+                    %in BSR umgerechnet
+                    Btemp532(Sel532P)=Beta./BeRa532(Sel532Ray,1); 
+                    Btemp532err(Sel532P)=Betaaer532err(Sel532P,j)./BeRa532(Sel532Ray,1);
                     
                     BSR532haben = mymedian(Btemp532(guteaeroposi)); % war mymean % mittlerer Wert in UBC die dann mit mittlerem Wert mit veraenderter LBC verglichen wird
                     
@@ -876,9 +890,9 @@ else
         end % for LR
         
         
-        P532roh=zeros(size(P532A))
-        P532Sroh=zeros(size(P532A))
-        P355roh=zeros(size(P532A))
+        P532roh=zeros(size(P532A));
+        P532Sroh=zeros(size(P532A));
+        P355roh=zeros(size(P532A));
         
         for j=1:entries %warum muss das hier in einer schleife sein? 
             
