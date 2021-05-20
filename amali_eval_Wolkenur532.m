@@ -44,7 +44,7 @@ if strcmp(computer, 'Potsdam')
         campaign = 'ACLOUD';
         Angstroem=1.4; %#ok<NASGU>
         speicherdir = '/atm_meas/polar_5_6/amali/data/nadir_processed/cloud/2017/';
-        amalidatendir='/lidar4/lidar/amali2011/data/mat/2017/'
+        amalidatendir='/atm_meas/awipev/lidartmp/lidar4/lidar/amali2011/data/mat/2017/'
     elseif strcmp(DatStr(1:2), '19')
         campaign = 'AFLUX';
         Angstroem=1.2; %#ok<NASGU>
@@ -119,7 +119,7 @@ UeberlappEnde=300; % [m]
 pretrigrange=1:400; %in dem bereich bestimmen wir das Rauschen
 pretriggerbins=405; %hier faengt das eigentliche Signal an
 
-Schwelle = 1e-8; % Signal (P)< Schwelle nur noch Rauschen
+Schwelle = 1e-8; % Signal (P)< Schwelle -->nur noch Rauschen
 
 UeberlappEndeposi = round(UeberlappEnde ./ 7.5); %von m in bin umrechnen
 
@@ -599,7 +599,8 @@ else
                 
                 
                 [~,posi]=min(abs(matlabzeit(j)-flugzeit));
-                
+                if(flughoehe(posi)>2500),
+                    
                 Sel532Ray = Sel532P + round((3500-flughoehe(posi))/7.5);
                 %set range gates for lower boundary condition
                 hwo2=flughoehe(posi)-7.5;
@@ -710,15 +711,15 @@ else
                 %LR355arr(woaerosol,j) = LR355aerosol;
                 
                 %gute aeroposi geht vom flugzeug zum Boden
-                guteaeroposi= connrnge(H>  UeberlappEnde & H < hwo1 & H<1500 & Btemp532 < Wolkenschwelle532); % das sucht die zusammenhaengenden Bereiche ohne Wolken, beschraenkt auf die 1000 m unter dem flugzeug damit wir nicht in die Grenzschicht kommen, wo die annahme, das es ist wie in NYA nicht mehr gelten wuerde
+                guteaeroposi= connrnge(H>  UeberlappEnde & H < hwo1 & H<UeberlappEnde+750 & Btemp532 < Wolkenschwelle532); % das sucht die zusammenhaengenden Bereiche ohne Wolken, beschraenkt auf die 1500 m unter dem flugzeug damit wir nicht in die Grenzschicht kommen, wo die annahme, das es ist wie in NYA nicht mehr gelten wuerde
                 if length(guteaeroposi) > 1
-                    guteaeroposi = (guteaeroposi(1):guteaeroposi(2));%geeingnete position fuer vergleich (kontrollrange fuer BSR355soll)
+                    guteaeroposi = (guteaeroposi(1):guteaeroposi(2));%geeingnete position fuer vergleich (kontrollrange fuer BSR532soll)
                     %achtung guteaerosolposi zaehlt vom Flugzeug aus,
                     %BSR532Karlmedianvgl zaehlt vom Boden aus.
                     
                     
                 else
-                    guteaeroposi = floor(UeberlappEnde/7.5 ):floor(UeberlappEnde+200/7.5 );  % irgendwelche Positionen dicht unter Flugzeug
+                    guteaeroposi = floor(UeberlappEnde/7.5 ):floor((UeberlappEnde+200)/7.5 );  % irgendwelche Positionen dicht unter Flugzeug
                     %ichmerkmirkomischepositionen = 1;
                     Abbruch532(j,LR) = Abbruch532(j,LR)+10; %keine Wolkenfreien Positionen gefunden, Einfach zwischen 300 und 500 m unterm Flugzeug zu CLEAR erkl?rt
                 end
@@ -884,7 +885,7 @@ else
                 
                 Wolkenmaske(wowolke,j,1) = 1;
                 
-                
+                end %if flughoehe(posi)>2500 
             end % for Zeitschritte "entries"
             
         end % for LR

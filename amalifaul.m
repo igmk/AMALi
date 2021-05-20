@@ -16,7 +16,7 @@ if strcmp(computer, 'Potsdam')
 addpath('/atm_meas/polar_5_6/amali/processing/nadir/cloud/Amali_subroutines');  
 end
 
-Speichernamepraefix = 'test2_';            
+Speichernamepraefix = 'AFLUX_';            
 
 % reference Value for clean air beneath aircraft. 
 % KARL are average values from Ny-Alesund
@@ -64,6 +64,9 @@ for j=NStart:NEnd
 
    disp([upper(mfilename) ': Starting Data processing ...']);
    disp(['...of ', xdatum])
+   if(xdatum == 170531)
+       disp('zenith mode ... skipping')
+   else
    %ok = amali_eval_Wolkenur532(xdatum, 1, Speichernamepraefix, BSR532soll,BSRAtFit532start,2400,2500);
    ok = amali_eval_Wolkenur532(xdatum, 1, Speichernamepraefix, BSR532soll,BSRAtFit532start);
    %here aerofak is 1 because we assume aerosol load in NYA and below the
@@ -72,7 +75,7 @@ for j=NStart:NEnd
    disp([upper(mfilename) '::::::::::: Done ::::::::::' ok]);
    disp('  ');
    disp('  ');
-    
+   end 
 
 end
 
