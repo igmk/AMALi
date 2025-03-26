@@ -54,6 +54,11 @@ def amali_raw_to_netcdf(
         capture_output=True, 
         text=True
         )
+    # find_files = subprocess.run( 
+    #     [ 'find', search_path, '-name', data_files],
+    #     capture_output=True, 
+    #     text=True
+    #     )
     filenames = find_files.stdout.splitlines()
 
     # sort filenames
@@ -106,7 +111,7 @@ def amali_raw_to_netcdf(
 
 
                     # join data and data_i
-                    data = xr.combine_by_coords( [ data, data_i ] , data_vars='minimal' )
+                    data = xr.combine_by_coords( [ data, data_i ] , data_vars='minimal', combine_attrs='drop_conflicts' )
 
 
                 if verbose >= 10 : print( "data.dims['time']=",data.dims['time'] )
@@ -151,7 +156,7 @@ def amali_raw_to_netcdf(
         # we need to take the attributes of the very first file
         data.attrs = global_attrs
 
-        data.attrs['source'] = search_path
+        data.attrs['source'] = 'AMALi raw data format'
 
         data.attrs['time_range'] = (
             dt.datetime.fromtimestamp( min(data['time'].data), tz=dt.timezone.utc ).strftime( '%d.%m.%Y %H:%M:%S.%f' )[:-4] 
@@ -196,6 +201,7 @@ def amali_raw_to_netcdf(
         # write to netcdf
         if verbose >= 1 : print( 'write data to "'+dest_path+nc_filename+'"' )
         data.to_netcdf( dest_path+nc_filename )
+        # data.to_netcdf( '/tmp/'+nc_filename )
         # --------------------------------------------------------------------------------
 
         # end if N_file > 0
@@ -209,23 +215,27 @@ def amali_raw_to_netcdf(
 
 
 # test:
-# YYYY = '2017'
-# YY = YYYY[2:4]
-# mm   = '05'
-# m1   = mm[1]
-# # dd   = '23'
-# dd   = '25'
-# HH   = '10'
+YYYY = '2025'
+YY = YYYY[2:4]
+mm   = '02'
+m1   = mm[1]
+# dd   = '23'
+dd   = '06'
+HH   = '11'
+prefix = 'a'
+
+amali_raw_to_netcdf( '/data/obs/campaigns/compex-ec/ground/amali/raw/'+YYYY+'/'+mm+'/'+dd , dest_path='/data/obs/campaigns/compex-ec/ground/amali/l00/'+YYYY+'/'+mm+'/'+dd, verbose=5 )
 
 
-# amali_raw_to_netcdf( '/data/obs/campaigns/acloud/amali/raw/'+YYYY+'/'+mm+'/'+dd+'/a'+YY+m1+dd+HH+'*.*' , verbose=5 )
 
-
-
-# for h in np.arange( 8, 16 ) :
+# for h in np.arange( 8, 12 ) :
 #      HH = "{:02d}".format(h)
+#      data_files = prefix+YY+m1+dd+HH+'*.*'
 #      #                     /data/obs/campaigns/acloud/amali/raw/  2017  /  05  /  23  /a  17  5 23 hh ...
-#      amali_raw_to_netcdf( '/data/obs/campaigns/acloud/amali/raw/'+YYYY+'/'+mm+'/'+dd+'/a'+YY+m1+dd+HH+'*.*' , verbose=5 )
+#      amali_raw_to_netcdf( '/data/obs/campaigns/acloud/p5/amali/raw/'+YYYY+'/'+mm+'/'+dd+'/',data_files, dest_path='/tmp/amali/'+YYYY+'/'+mm+'/'+dd+'/', verbose=5 )
+#      # amali_raw_to_netcdf( '/data/obs/campaigns/acloud/p5/amali/raw/'+YYYY+'/'+mm+'/'+dd+'/',data_files, dest_path='/tmp/amali/'+YYYY+'/'+mm+'/'+dd+'/', verbose=5 )
+
+
 
 
 

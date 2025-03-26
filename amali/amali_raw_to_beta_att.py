@@ -37,7 +37,7 @@ import matplotlib.pyplot as plt
 def amali_raw_to_beta_att( 
       filename , # name of netcdf data file
       snr_thres = 4.0, # threshold for snr , value below are set to NAN
-      r_gnd_max = 4000., # maximum distance at which ground should appear (Polar 4/5 are not allowed higher than 4000m)
+      r_gnd_max = 4000., # maximum distance at which ground should appear (Polar 5 are not allowed higher than 4000m)
       verbose = 0 
       ) :
     ''' read AMALi raw nc data file and calculate beta_att'''
@@ -202,8 +202,8 @@ def amali_raw_to_beta_att(
     #       snr = (signal-bkgnd) / sqrt(2*bkgnd_noise^2 + (signal-bkgnd))
 
     # allocate arrays 
-    snr_all      = np.full( [N_chnl,N_time,N_bin_atm], float("NaN"), dtype=np.float )
-    beta_att_all = np.full( [N_chnl,N_time,N_bin_atm], float("NaN"), dtype=np.float )
+    snr_all      = np.full( [N_chnl,N_time,N_bin_atm], float("NaN"), dtype=float )
+    beta_att_all = np.full( [N_chnl,N_time,N_bin_atm], float("NaN"), dtype=float )
 
     # bkgnd and bkgnd_noise depend only on time and channel but not on height
     # we can do this for all times and all channels at once because we have bakgnd and noise also for all times and channels
@@ -986,5 +986,11 @@ def amali_raw_to_beta_att(
 # amali_raw_to_beta_att( '/data/obs/campaigns/halo-ac3/polar5_tmp/amali/l00/2022/04/07/amali_l00_20220407_0950.nc', snr_thres=0, r_gnd_max=3500., verbose=1 )
 
 # eleventh flight from 10.4.2022 ... 
-amali_raw_to_beta_att( '/data/obs/campaigns/halo-ac3/p5/polar5_tmp/amali/l00/2022/04/01/amali_l00_20220401_0925.nc', snr_thres=0, r_gnd_max=3500., verbose=1 )
+# amali_raw_to_beta_att( '/data/obs/campaigns/halo-ac3/p5/amali/l00/2022/04/01/amali_l00_20220401_0925.nc', snr_thres=0, r_gnd_max=3500., verbose=1 )
+
+
+# ninnth flight from 10.9.2020 ... 
+#amali_raw_to_beta_att( '/data/obs/campaigns/mosaic-aca/p5/amali/l00/2020/09/10/amali_l00_20200910_0839.nc', snr_thres=0, r_gnd_max=5000., verbose=1 )
+amali_raw_to_beta_att( '/tmp/amali_l00_20250206_1356.nc', snr_thres=0, r_gnd_max=5000., verbose=1 )
+
 

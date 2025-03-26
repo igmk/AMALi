@@ -95,18 +95,18 @@ def read_amali_raw( filename, plot_every=0, verbose=0 ):
         
         # read channel information   
         # define arrays for channel info
-        channel_wvl = np.full(   [N_chnl], float("NaN"), dtype=np.float )
+        channel_wvl = np.full(   [N_chnl], float("NaN"), dtype=float )
 
         # ncview does not like string type in file ... => should not use the following ...
-        channel_pol = np.full(   [N_chnl], 'x', dtype=np.str   )
+        channel_pol = np.full(   [N_chnl], 'x', dtype=str   )
         # try type conversion of string to byte -> python believes at some point it must convert to int ???
         # channel_pol = np.full(   [N_chnl], bytes('x','utf-8'), dtype=np.byte   )
         # try encode  ... same error !?!?!?
         # channel_pol = np.full(   [N_chnl], 'x'.encode(), dtype=np.byte   )
 
-        channel_Uh  = np.full(   [N_chnl], '-999',       dtype=np.int   )
-        channel_Ue  = np.full(   [N_chnl], '-999',       dtype=np.int   )
-        channel_analog = np.full([N_chnl], 255,          dtype=np.byte  )
+        channel_Uh  = np.full(   [N_chnl], '-999',       dtype=int   )
+        channel_Ue  = np.full(   [N_chnl], '-999',       dtype=int   )
+        channel_analog = np.full([N_chnl], 255,          dtype=bytes  )
 
         channel_info_str = []
 
@@ -157,7 +157,7 @@ def read_amali_raw( filename, plot_every=0, verbose=0 ):
         time    = np.full( [N_chnl,N_time_max], float("NaN"), dtype=np.float64 )
         N_shot  = np.full( [N_chnl,N_time_max], -999,         dtype=np.int16   )
         N_range = np.full( [N_chnl,N_time_max], -999,         dtype=np.int16   )
-        res     = np.full( [N_chnl,N_time_max], float("NaN"), dtype=np.float )
+        res     = np.full( [N_chnl,N_time_max], float("NaN"), dtype=float )
 
         # received signal is stored binary as array of unsigned 2byte integer in little endian
         #   we ignore here the endianess as it is only important while reading
@@ -388,7 +388,7 @@ def read_amali_raw( filename, plot_every=0, verbose=0 ):
             # global attributes
             attrs = dict( 
                 description = 'AMALi Lidar raw data',
-                source      = filename ,  
+                source      = 'AMALi raw data like produce from LabView routine' ,  
                 operator    = header["op"], 
                 hardware    = header["hw"], 
                 software    = header["sw"],
