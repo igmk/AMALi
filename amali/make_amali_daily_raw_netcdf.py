@@ -23,12 +23,14 @@ import xarray as xr
 #db = '/data/obs/campaigns/aflux/p5/amali'
 
 # mosaic-aca campagin 31.8. - 13.9.2019
-db = '/data/obs/campaigns/mosaic-aca/p5/amali'
+# db = '/data/obs/campaigns/mosaic-aca/p5/amali'
 
 # ac3 campaign 20.3.2022 - ... preliminary directories ?
 # db = '/data/obs/campaigns/halo-ac3/p5/amali'
 # db = '/tmp/amali/'
 
+# compex-ec campagin 2.4. - 16.4.2025
+db = '/data/obs/campaigns/compex-ec/p5/amali'
 
 search_path = db 
 # for acloud data is in subdir raw for aflux there is no subdir ...
@@ -54,7 +56,7 @@ fp = glob( search_path+'/????/??/??' )
 # fp = glob( search_path+'/2020/08/31' )
 
 # redo September 9 2020
-fp = glob( search_path+'/2020/09/10' )
+# fp = glob( search_path+'/2020/09/10' )
 
 
 # test single days

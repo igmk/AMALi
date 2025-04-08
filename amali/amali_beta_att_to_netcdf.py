@@ -218,8 +218,8 @@ def amali_beta_att_to_netcdf(
     #       snr = (signal-bkgnd) / sqrt(2*bkgnd_noise^2 + (signal-bkgnd))
 
     # allocate arrays 
-    snr_all      = np.full( [N_chnl,N_time,N_bin_atm], float("NaN"), dtype=np.float )
-    beta_att_all = np.full( [N_chnl,N_time,N_bin_atm], float("NaN"), dtype=np.float )
+    snr_all      = np.full( [N_chnl,N_time,N_bin_atm], float("NaN"), dtype=float )
+    beta_att_all = np.full( [N_chnl,N_time,N_bin_atm], float("NaN"), dtype=float )
 
     # bkgnd and bkgnd_noise depend only on time and channel but not on height
     # we can do this for all times and all channels at once because we have bakgnd and noise also for all times and channels
@@ -434,9 +434,10 @@ def amali_beta_att_to_netcdf(
     da.snr.attrs['units'] = '-'
     da.snr.attrs['description'] = 'Signal to noise ratio'
 
+    del(da.time.attrs["units"])
     da.time.attrs['standard_name']='time'
     da.time.attrs['long_name']='time in seconds since epoch'
-#    da.time.attrs['units']='Seconds since 01.01.1970 00:00:00'
+    # da.time.attrs['units']='Seconds since 01.01.1970 00:00:00'
     
     da.height.attrs['standard_name']='altitude'
     da.height.attrs['long_name']='distance to aircraft'
@@ -485,26 +486,32 @@ from glob import glob
 # gpsp='/data/obs/campaigns/mosaic-aca/p5/gps_ins'
 # mission='MOSAiC-ACA'
 
-# ac3 campaign 20.3.2022 - ... preliminary directories ?
-db = '/data/obs/campaigns/halo-ac3/p5/amali/l00'
-gpsp='/data/obs/campaigns/halo-ac3/p5/gps_ins'
-mission='HALO-AC3'
+# halo-ac3 campaign 20.3.2022 - ... preliminary directories ?
+# db = '/data/obs/campaigns/halo-ac3/p5/amali/l00'
+# gpsp='/data/obs/campaigns/halo-ac3/p5/gps_ins'
+# mission='HALO-AC3'
 
+# compex-ec campaign 2.4.2025 - ... preliminary directories ?
+db = '/data/obs/campaigns/compex-ec/p5/amali/l00'
+gpsp='/data/obs/campaigns/compex-ec/p5/gps_ins'
+mission='COMPEX-EC'
 
 search_path = db 
 
 # destination is sub directory l00 (level zero zero)
-dest_base = '/tmp/'
+dest_base = db
 
 # search days = directories
 print( 'search days in', search_path )
 
 # all days
-#fp = glob( search_path+'/????/??/??/amali_l00_*' )
-#fp = glob( search_path+'/2017/05/27/amali_l00_*' )
+# fp = glob( search_path+'/????/??/??/amali_l00_*' )
+# fp = glob( search_path+'/2017/05/27/amali_l00_*' )
 # fp = glob( search_path+'/2020/09/10/amali_l00_*' )
-fp = glob( search_path+'/2022/04/01/amali_l00_*' )
-#fp = glob( search_path+'/2019/03/21/amali_l00_*' )
+# fp = glob( search_path+'/2022/04/01/amali_l00_*' )
+# fp = glob( search_path+'/2019/03/21/amali_l00_*' )
+fp = glob( search_path+'/2025/04/07/amali_l00_*' )
+
 print( 'found ', len(fp),'day directories' )
 
 
@@ -521,7 +528,7 @@ for fp_i in fp:
   print( 'processing dir#',i,'=', fp_i )
 
   #amali_raw_to_netcdf( fp_i, dest_path=dest_base+'/<YYYY>/<MM>/<DD>', verbose=5 )
-  amali_beta_att_to_netcdf( fp_i,dest_base+'/<YYYY>/<MM>/<DD>', mission,gpsp,snr_thres=0, r_gnd_max=4000., verbose=1 )
+  amali_beta_att_to_netcdf( fp_i,dest_base+'/<YYYY>/<MM>/<DD>', mission,gpsp,snr_thres=0, r_gnd_max=4500., verbose=0 )
 
 # def amali_beta_att_to_netcdf( 
 #       filename , # name of netcdf data file
